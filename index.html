@@ -295,6 +295,7 @@
     <script>
         // Game constants
         const VARIANTS = [
+            { name: 'normal', chance: 1, multipliesRNG: 1 },
             { name: 'shiny', chance: 10, multiplesRNG: 10 },
             { name: 'better', chance: 25, multiplesRNG: 25 },
             { name: 'spectral', chance: 50, multiplesRNG: 50 },
@@ -316,8 +317,8 @@
             { name: 'unreal', min: 10000, max: 50000 },
             { name: 'eternal', min: 50000, max: 100000 },
             { name: 'iridescence', min: 100000, max: 500000 },
-            { name: 'zeta', min: 500000: max: 1000000 },
-            { name: 'fantasy', min: 1000000: max: Infinity }
+            { name: 'zeta', min: 500000, max: 1000000 },
+            { name: 'fantasy', min: 1000000, max: Infinity }
         ];
 
         const SECRETS = [
@@ -579,8 +580,9 @@
                 speedLevel++;
                 speedCost = Math.floor(speedCost * 1.15);
             } else if (type === 'inventory') {
-                if (invLevel >= 40 || polycoin < invCost) return;
-                polycoin -= invCost;
+                const nextInvCost = calculateInvCost();
+                if (invLevel >= 40 || polycoin < nextInvCost) return;
+                polycoin -= nextInvCost;
                 invLevel++;
             }
             updateUI();
@@ -651,10 +653,9 @@
             document.getElementById('invLevel').textContent = 10 + invLevel;
             document.getElementById('invCost').textContent = nextInvCost.toLocaleString();
             document.getElementById('invBtn').disabled = invLevel >= 40 || polycoin < nextInvCost;
-            invCost = nextInvCost;
         }
 
-        async function saveGame() {
+        function saveGame() {
             try {
                 const saveData = {
                     polycoin,
@@ -671,17 +672,17 @@
                     invLevel,
                     inventory
                 };
-                await window.storage.set('polys-rng-save', JSON.stringify(saveData));
+                localStorage.setItem('polys-rng-save', JSON.stringify(saveData));
             } catch (error) {
                 console.error('Failed to save game:', error);
             }
         }
 
-        async function loadGame() {
+        function loadGame() {
             try {
-                const result = await window.storage.get('polys-rng-save');
-                if (result && result.value) {
-                    const saveData = JSON.parse(result.value);
+                const result = localStorage.getItem('polys-rng-save');
+                if (result) {
+                    const saveData = JSON.parse(result);
                     polycoin = saveData.polycoin || 0;
                     bestRoll = saveData.bestRoll || 0;
                     totalRolls = saveData.totalRolls || 0;
