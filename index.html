@@ -187,7 +187,7 @@
         .upgrades-section, .inventory-section {
             margin-top: 20px;
         }
-        .upgrades-header, .inventory-header, .enchants-header, .indices-header {
+        .upgrades-header, .inventory-header, .enchants-header, .index-header {
             background: #666;
             color: white;
             padding: 15px;
@@ -200,13 +200,13 @@
             margin-bottom: 10px;
             text-transform: lowercase;
         }
-        .upgrades-header:hover, .inventory-header:hover, .enchants-header:hover, .indices-header:hover {
+        .upgrades-header:hover, .inventory-header:hover, .enchants-header:hover, .index-header:hover {
             background: #888;
         }
-        .upgrades-content, .inventory-content, .enchants-content, .indices-content {
+        .upgrades-content, .inventory-content, .enchants-content, .index-content {
             display: none;
         }
-        .upgrades-content.open, .inventory-content.open, .enchants-content.open, .indices-content.open {
+        .upgrades-content.open, .inventory-content.open, .enchants-content.open, .index-content.open {
             display: block;
         }
         .upgrade-box {
@@ -260,7 +260,7 @@
             color: #666;
             text-transform: lowercase;
         }
-        .indices-grid {
+        .index-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
@@ -383,7 +383,7 @@
                     <div class="inventory-header" onclick="toggleSection('inventoryContent')">
                         📦 inventory (<span id="invCount">0</span>/<span id="invMax">10</span>)
                     </div>
-                    <div class="inventory-content" id="inventoryContent">
+                    <div class="inventory-content open" id="inventoryContent">
                         <div class="inventory" id="inventoryList"></div>
                     </div>
                 </div>
@@ -394,17 +394,17 @@
                     <div class="enchants-header" onclick="toggleSection('enchantsContent')">
                         🔮 equipped enchant
                     </div>
-                    <div class="enchants-content" id="enchantsContent">
+                    <div class="enchants-content open" id="enchantsContent">
                         <div class="inventory" id="equippedEnchant"></div>
                     </div>
                 </div>
 
-                <div class="indices-section">
-                    <div class="indices-header" onclick="toggleSection('indicesContent')">
-                        📚 indices (click to expand)
+                <div class="index-section">
+                    <div class="index-header" onclick="toggleSection('indexContent')">
+                        📚 index (click to expand)
                     </div>
-                    <div class="indices-content" id="indicesContent">
-                        <div class="indices-grid">
+                    <div class="index-content" id="indexContent">
+                        <div class="index-grid">
                             <div class="index-category">
                                 <div class="index-title">variants</div>
                                 <div id="variantsIndex"></div>
@@ -497,11 +497,12 @@
 
         // load game on start
         loadGame();
-        updateIndices();
 
         function toggleSection(sectionId) {
             const content = document.getElementById(sectionId);
-            content.classList.toggle('open');
+            if (content) {
+                content.classList.toggle('open');
+            }
         }
 
         function getRNGColor(rng) {
@@ -728,6 +729,7 @@
             
             updateInventory();
             updateEquippedEnchant();
+            updateUI();
             saveGame();
         }
 
@@ -752,6 +754,7 @@
         function unequipEnchant() {
             equippedEnchant = null;
             updateEquippedEnchant();
+            updateUI();
             saveGame();
         }
 
@@ -879,6 +882,7 @@
             
             if (!equippedEnchant) {
                 list.innerHTML = '<div style="text-align: center; color: #999;">no enchant equipped!</div>';
+                document.getElementById('enchants').textContent = '0';
                 return;
             }
             
@@ -915,7 +919,7 @@
             `;
         }
 
-        function updateIndices() {
+        function updateIndex() {
             // variants index
             const variantsHTML = VARIANTS.map(v => 
                 `<div class="index-item">${v.name}: ${v.multipliesRNG}x (1/${v.chance})</div>`
@@ -945,7 +949,8 @@
                         ? '+5 luck, -0.25s speed, +5 secret'
                         : '+10 luck, -0.5s speed, +25 secret';
                 }
-                return `<div class="index-item">${e.name}: ${effect} (1/${Math.round(1/e.chance)})</div>`;
+                const chanceDisplay = Math.round(1/e.chance);
+                return `<div class="index-item">${e.name}: ${effect} (1/${chanceDisplay})</div>`;
             }).join('');
             document.getElementById('enchantsIndex').innerHTML = enchantsHTML;
         }
@@ -1037,12 +1042,18 @@
             updateRollers();
             updateInventory();
             updateEquippedEnchant();
+            updateIndex();
             updateUI();
         }
 
         // initialize
         updateRollers();
         updateUI();
+        updateIndex();
+        
+        // Make inventory and enchant sections open by default
+        document.getElementById('inventoryContent').classList.add('open');
+        document.getElementById('enchantsContent').classList.add('open');
     </script>
 </body>
 </html>
