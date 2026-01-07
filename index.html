@@ -59,20 +59,47 @@
             background: #ffffff;
             border: 3px solid #ff69b4;
             border-radius: 15px;
-            padding: 30px 20px;
+            padding: 20px;
             text-align: center;
-            min-height: 160px;
+            min-height: 180px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             flex: 1;
             min-width: 250px;
         }
+        .slot-machine {
+            width: 100%;
+            height: 40px;
+            overflow: hidden;
+            position: relative;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .slot-strip {
+            display: flex;
+            transition: transform 0.1s linear;
+            position: absolute;
+            width: 2500px;
+        }
+        .slot-item {
+            width: 100px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            border-right: 1px solid #eee;
+        }
         .roll-result {
             font-size: 36px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            min-height: 45px;
         }
         .accept-btn {
             background: #ff69b4;
@@ -105,7 +132,7 @@
         }
         .roll-name {
             font-size: 20px;
-            margin: 10px 0 5px 0;
+            margin: 5px 0;
         }
         .roll-variant {
             font-size: 16px;
@@ -208,12 +235,12 @@
             font-size: 14px;
             color: #666;
         }
-        @keyframes spin {
-            0%, 100% { transform: rotateX(0deg); }
-            50% { transform: rotateX(360deg); }
+        @keyframes highlight {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(255, 255, 0, 0.3); }
         }
-        .rolling {
-            animation: spin 0.2s linear infinite;
+        .highlight {
+            animation: highlight 0.5s ease-in-out;
         }
     </style>
 </head>
@@ -239,8 +266,15 @@
         <div class="rollers-container" id="rollersContainer">
             <div class="roll-display">
                 <div class="roll-result">Press Roll!</div>
+                <div class="slot-machine">
+                    <div class="slot-strip" id="slot-strip-0"></div>
+                </div>
                 <div class="roll-name"></div>
                 <div class="roll-variant"></div>
+                <div class="roll-actions" style="display: none;">
+                    <button class="accept-btn" onclick="acceptRoll(0)">✓ Accept</button>
+                    <button class="decline-btn" onclick="declineRoll(0)">✗ Decline</button>
+                </div>
             </div>
         </div>
 
@@ -295,13 +329,13 @@
     <script>
         // Game constants
         const VARIANTS = [
-            { name: 'normal', chance: 1, multipliesRNG: 1 },
-            { name: 'shiny', chance: 10, multiplesRNG: 10 },
-            { name: 'better', chance: 25, multiplesRNG: 25 },
-            { name: 'spectral', chance: 50, multiplesRNG: 50 },
-            { name: 'divine', chance: 100, multiplesRNG: 100 },
-            { name: 'chromatic', chance: 250, multiplesRNG: 250 },
-            { name: 'inverted', chance: 500, multiplesRNG: 500 }
+            { name: 'normal', chance: 1, multiplier: 1 },
+            { name: 'shiny', chance: 10, multiplier: 10 },
+            { name: 'better', chance: 25, multiplier: 25 },
+            { name: 'spectral', chance: 50, multiplier: 50 },
+            { name: 'divine', chance: 100, multiplier: 100 },
+            { name: 'chromatic', chance: 250, multiplier: 250 },
+            { name: 'inverted', chance: 500, multiplier: 500 }
         ];
 
         const RANKS = [
@@ -367,37 +401,38 @@
         }
 
         function calculateRNG() {
-            const luck = luckLevel * 0.5;
-            const rng = Math.random() ** (-1.3 - (luck * 0.01));
-            return Math.max(1, rng);
+            // Fixed RNG formula: Math.random() ** -1.25 + 1 * luckLevel
+            const base = Math.random() ** -1.25;
+            const luckBonus = 1 * luckLevel;
+            return base + luckBonus;
         }
 
         function getRank(rng) {
-            for (let i = RANKS.length - 1; i >= 0; i--) {
-                if (rng >= RANKS[i].min) {
-                    return RANKS[i].name;
+            for (const rank of RANKS) {
+                if (rng >= rank.min && rng < rank.max) {
+                    return rank.name;
                 }
             }
-            return RANKS[0].name;
+            return RANKS[RANKS.length - 1].name;
         }
 
         function getVariant() {
-            for (let i = VARIANTS.length - 1; i >= 0; i--) {
+            for (const variant of VARIANTS) {
                 const random = Math.random();
-                if (random <= 1 / VARIANTS[i].chance) {
-                    return VARIANTS[i];
+                if (random <= 1 / variant.chance) {
+                    return variant;
                 }
             }
             return VARIANTS[0];
         }
 
-        function checkSecret() {
+        function checkSecret(baseRNG) {
             const secretLuck = secretLevel * 0.2;
             const random = Math.random();
-            for (let i = SECRETS.length - 1; i >= 0; i--) {
-                const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
+            for (const secret of SECRETS) {
+                const adjustedChance = secret.chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
-                    return SECRETS[i].name;
+                    return secret.name;
                 }
             }
             return null;
@@ -412,12 +447,13 @@
                 roller.id = `roller-${i}`;
                 roller.innerHTML = `
                     <div class="roll-result">Press Roll!</div>
-                    <div class="roll-actions" style="display: none;">
-                        <button class="accept-btn" onclick="acceptRoll(${i})">✓ Accept</button>
+                    <div class="slot-machine">
+                        <div class="slot-strip" id="slot-strip-${i}"></div>
                     </div>
                     <div class="roll-name"></div>
                     <div class="roll-variant"></div>
                     <div class="roll-actions" style="display: none;">
+                        <button class="accept-btn" onclick="acceptRoll(${i})">✓ Accept</button>
                         <button class="decline-btn" onclick="declineRoll(${i})">✗ Decline</button>
                     </div>
                 `;
@@ -425,25 +461,57 @@
             }
         }
 
-        function animateRoller(index) {
-            const roller = document.getElementById(`roller-${index}`);
-            if (!roller) return;
+        function createSlotStrip(index, slotValues) {
+            const strip = document.getElementById(`slot-strip-${index}`);
+            if (!strip) return;
             
-            const resultEl = roller.querySelector('.roll-result');
-            resultEl.classList.add('rolling');
+            strip.innerHTML = '';
             
-            let counter = 0;
-            const interval = setInterval(() => {
-                resultEl.textContent = (Math.random() * 10000).toFixed(2);
-                counter++;
-                if (counter >= 15) {
-                    clearInterval(interval);
-                    resultEl.classList.remove('rolling');
-                }
-            }, 200);
+            // Create 25 slot items (width 100px each = 2500px total)
+            for (let i = 0; i < 25; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot-item';
+                slot.textContent = slotValues[i].toFixed(2);
+                slot.style.color = getSlotColor(slotValues[i]);
+                strip.appendChild(slot);
+            }
+            
+            // Reset position
+            strip.style.transform = 'translateX(0)';
         }
 
-        function displayRoll(index, rng, rankName, variantName) {
+        function getSlotColor(value) {
+            if (value < 10) return '#000000';
+            if (value < 100) return '#ff69b4';
+            if (value < 1000) return '#32cd32';
+            if (value < 10000) return '#9370db';
+            return '#ff4500';
+        }
+
+        function animateSlotMachine(index, selectedIndex, slotValues, duration) {
+            const strip = document.getElementById(`slot-strip-${index}`);
+            if (!strip) return;
+            
+            // Calculate position to stop at selected slot (each slot is 100px wide)
+            const targetPosition = -selectedIndex * 100;
+            
+            // Animate faster based on speed upgrade
+            const animationDuration = Math.max(0.5, 3 - (speedLevel * 0.1));
+            const adjustedDuration = Math.max(0.3, animationDuration * 0.7); // Make it faster
+            
+            strip.style.transition = `transform ${adjustedDuration}s cubic-bezier(0.1, 0.7, 0.1, 1)`;
+            strip.style.transform = `translateX(${targetPosition}px)`;
+            
+            // Highlight the selected slot when animation ends
+            setTimeout(() => {
+                const slots = strip.querySelectorAll('.slot-item');
+                if (slots[selectedIndex]) {
+                    slots[selectedIndex].classList.add('highlight');
+                }
+            }, adjustedDuration * 1000);
+        }
+
+        function displayRoll(index, finalRNG, baseRNG, rankName, variantName) {
             const roller = document.getElementById(`roller-${index}`);
             if (!roller) return;
             
@@ -452,13 +520,13 @@
             const variantEl = roller.querySelector('.roll-variant');
             const actionElements = roller.querySelectorAll('.roll-actions');
             
-            resultEl.textContent = rng.toFixed(2);
+            resultEl.textContent = finalRNG.toFixed(2);
             nameEl.textContent = rankName;
             variantEl.textContent = variantName;
             
             actionElements.forEach(el => el.style.display = 'block');
             
-            const color = getRNGColor(rng);
+            const color = getRNGColor(finalRNG);
             if (color.includes('gradient')) {
                 resultEl.style.background = color;
                 resultEl.style.webkitBackgroundClip = 'text';
@@ -517,44 +585,71 @@
             isRolling = true;
             document.getElementById('rollBtn').disabled = true;
             
-            for (let i = 0; i < bulkLevel; i++) {
-                animateRoller(i);
-            }
-            
             const rollSpeed = Math.max(0.5, 3 - (speedLevel * 0.1));
             
-            setTimeout(() => {
-                for (let i = 0; i < bulkLevel; i++) {
-                    let rng = calculateRNG();
+            // Process each roller
+            for (let i = 0; i < bulkLevel; i++) {
+                // Generate 25 slot values using the same formula
+                const slotValues = [];
+                for (let j = 0; j < 25; j++) {
+                    const baseRNG = calculateRNG();
                     const variant = getVariant();
-                    rng = rng * variant.multiplesRNG;
+                    const finalRNG = baseRNG * variant.multiplier;
+                    slotValues.push(finalRNG);
+                }
+                
+                // Create the slot strip
+                createSlotStrip(i, slotValues);
+                
+                // Select a random slot (0-24)
+                const selectedIndex = Math.floor(Math.random() * 25);
+                const selectedBaseRNG = calculateRNG(); // Recalculate for the selected slot
+                const selectedVariant = getVariant();
+                const selectedFinalRNG = selectedBaseRNG * selectedVariant.multiplier;
+                
+                // Animate the slot machine
+                animateSlotMachine(i, selectedIndex, slotValues, rollSpeed);
+                
+                // Set timeout to display result after animation
+                setTimeout(() => {
+                    const secret = checkSecret(selectedBaseRNG);
+                    const rankName = secret || getRank(selectedBaseRNG);
                     
-                    const secret = checkSecret();
-                    const rankName = secret || getRank(rng);
-                    
-                    const gain = Math.floor(Math.pow(rng, 0.8) * 0.75);
+                    const gain = Math.floor(Math.pow(selectedFinalRNG, 0.8) * 0.75);
                     polycoin += gain;
                     totalRolls++;
                     
-                    if (rng > bestRoll) {
-                        bestRoll = rng;
+                    if (selectedFinalRNG > bestRoll) {
+                        bestRoll = selectedFinalRNG;
                     }
                     
-                    displayRoll(i, rng, rankName, variant.name);
+                    displayRoll(i, selectedFinalRNG, selectedBaseRNG, rankName, selectedVariant.name);
                     
                     pendingRolls[i] = {
-                        rng: rng,
+                        baseRNG: selectedBaseRNG,
+                        finalRNG: selectedFinalRNG,
                         rank: rankName,
-                        variant: variant.name,
+                        variant: selectedVariant.name,
                         timestamp: Date.now()
                     };
-                }
-                
-                updateUI();
-                saveGame();
-                isRolling = false;
-                document.getElementById('rollBtn').disabled = false;
-            }, rollSpeed * 1000);
+                    
+                    // Check if all rollers are done
+                    let allDone = true;
+                    for (let j = 0; j < bulkLevel; j++) {
+                        if (!document.querySelector(`#roller-${j} .roll-result`).textContent.includes('.')) {
+                            allDone = false;
+                            break;
+                        }
+                    }
+                    
+                    if (allDone) {
+                        updateUI();
+                        saveGame();
+                        isRolling = false;
+                        document.getElementById('rollBtn').disabled = false;
+                    }
+                }, rollSpeed * 1000 * 0.7); // Display result slightly before animation fully ends
+            }
         }
 
         function buyUpgrade(type) {
@@ -602,16 +697,17 @@
             }
             
             list.innerHTML = inventory.map((item, index) => {
-                const color = getRNGColor(item.rng);
+                const color = getRNGColor(item.finalRNG || item.rng);
                 let style = `color: ${color};`;
                 if (color.includes('gradient')) {
                     style = `background: ${color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;`;
                 }
                 
+                const displayRNG = item.finalRNG || item.rng;
                 return `
                     <div class="inventory-item">
                         <div>
-                            <span class="inventory-rng" style="${style}">${item.rng.toFixed(2)}</span>
+                            <span class="inventory-rng" style="${style}">${displayRNG.toFixed(2)}</span>
                             <div class="inventory-details">${item.rank} - ${item.variant}</div>
                         </div>
                         <button class="decline-btn" onclick="deleteInventoryItem(${index})" style="padding: 5px 15px; font-size: 12px;">Delete</button>
@@ -635,7 +731,7 @@
             document.getElementById('bulkBtn').disabled = bulkLevel >= 3 || polycoin < bulkCost;
             
             document.getElementById('luckLevel').textContent = luckLevel;
-            document.getElementById('luckAmount').textContent = (luckLevel * 0.5).toFixed(1);
+            document.getElementById('luckAmount').textContent = (luckLevel * 1).toFixed(1);
             document.getElementById('luckCost').textContent = luckCost.toLocaleString();
             document.getElementById('luckBtn').disabled = luckLevel >= 100 || polycoin < luckCost;
             
