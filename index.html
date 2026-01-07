@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polys Silly RNGame</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffc0cb 0%, #ffffff 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #ff69b4;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .stat-box {
+            background: #f0f0f0;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff69b4;
+        }
+        .rollers-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .roll-display {
+            background: #ffffff;
+            border: 3px solid #ff69b4;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-align: center;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            min-width: 250px;
+        }
+        .roll-result {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .accept-btn {
+            background: #ff69b4;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .decline-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .accept-btn:hover {
+            background: #ff85c1;
+        }
+        .decline-btn:hover {
+            background: #ff6666;
+        }
+        .roll-actions {
+            margin-top: 10px;
+        }
+        .roll-name {
+            font-size: 20px;
+            margin: 10px 0 5px 0;
+        }
+        .roll-variant {
+            font-size: 16px;
+            color: #666;
+        }
+        button {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #888;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upgrades-section {
+            margin-top: 30px;
+        }
+        .upgrades-header {
+            background: #666;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            user-select: none;
+        }
+        .upgrades-header:hover {
+            background: #888;
+        }
+        .upgrades-content {
+            display: none;
+            margin-top: 15px;
+        }
+        .upgrades-content.open {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .upgrade-box {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        .upgrade-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ff69b4;
+        }
+        .upgrade-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .inventory {
+            margin-top: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .inventory-title {
+            font-weight: bold;
+            font-size: 20px;
+            color: #ff69b4;
+            margin-bottom: 15px;
+        }
+        .inventory-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .inventory-rng {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .inventory-details {
+            font-size: 14px;
+            color: #666;
+        }
+        @keyframes spin {
+            0%, 100% { transform: rotateX(0deg); }
+            50% { transform: rotateX(360deg); }
+        }
+        .rolling {
+            animation: spin 0.2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>polys silly rngame</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Polycoin</div>
+                <div class="stat-value" id="polycoin">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Best Roll</div>
+                <div class="stat-value" id="best">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Rolls</div>
+                <div class="stat-value" id="rolls">0</div>
+            </div>
+        </div>
+
+        <div class="rollers-container" id="rollersContainer">
+            <div class="roll-display">
+                <div class="roll-result">Press Roll!</div>
+                <div class="roll-name"></div>
+                <div class="roll-variant"></div>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button onclick="roll()" id="rollBtn">Roll</button>
+        </div>
+
+        <div class="upgrades-section">
+            <div class="upgrades-header" onclick="toggleUpgrades()">
+                ⚙️ Upgrades (Click to Expand) ⚙️
+            </div>
+            <div class="upgrades-content" id="upgradesContent">
+                <div class="upgrade-box">
+                    <div class="upgrade-title">Add Roller</div>
+                    <div class="upgrade-info">Rollers: <span id="bulkLevel">1</span>/3</div>
+                    <div class="upgrade-info">Effect: +1 roller on screen</div>
+                    <button onclick="buyUpgrade('bulk')" id="bulkBtn">Buy (Cost: <span id="bulkCost">100</span>)</button>
+                </div>
+                <div class="upgrade-box">
+                    <div class="upgrade-title">Luck Boost</div>
+                    <div class="upgrade-info">Level: <span id="luckLevel">0</span>/100</div>
+                    <div class="upgrade-info">Effect: +<span id="luckAmount">0</span> luck</div>
+                    <button onclick="buyUpgrade('luck')" id="luckBtn">Buy (Cost: <span id="luckCost">10</span>)</button>
+                </div>
+                <div class="upgrade-box">
+                    <div class="upgrade-title">Secret Luck</div>
+                    <div class="upgrade-info">Level: <span id="secretLevel">0</span>/25</div>
+                    <div class="upgrade-info">Effect: +<span id="secretAmount">0</span> secret luck</div>
+                    <button onclick="buyUpgrade('secret')" id="secretBtn">Buy (Cost: <span id="secretCost">50</span>)</button>
+                </div>
+                <div class="upgrade-box">
+                    <div class="upgrade-title">Roll Speed</div>
+                    <div class="upgrade-info">Level: <span id="speedLevel">0</span>/25</div>
+                    <div class="upgrade-info">Speed: <span id="speedAmount">3.0</span>s</div>
+                    <button onclick="buyUpgrade('speed')" id="speedBtn">Buy (Cost: <span id="speedCost">50</span>)</button>
+                </div>
+                <div class="upgrade-box">
+                    <div class="upgrade-title">Inventory Slots</div>
+                    <div class="upgrade-info">Slots: <span id="invLevel">10</span>/50</div>
+                    <div class="upgrade-info">Effect: +1 inventory slot</div>
+                    <button onclick="buyUpgrade('inventory')" id="invBtn">Buy (Cost: <span id="invCost">0</span>)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="inventory">
+            <div class="inventory-title">📦 Inventory (<span id="invCount">0</span>/<span id="invMax">10</span>)</div>
+            <div id="inventoryList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game constants
+        const VARIANTS = [
+            { name: 'shiny', chance: 10, multiplesRNG: 10 },
+            { name: 'better', chance: 25, multiplesRNG: 25 },
+            { name: 'spectral', chance: 50, multiplesRNG: 50 },
+            { name: 'divine', chance: 100, multiplesRNG: 100 },
+            { name: 'chromatic', chance: 250, multiplesRNG: 250 },
+            { name: 'inverted', chance: 500, multiplesRNG: 500 }
+        ];
+
+        const RANKS = [
+            { name: 'common', min: 1, max: 5 },
+            { name: 'rare', min: 5, max: 25 },
+            { name: 'decent', min: 25, max: 50 },
+            { name: 'natural', min: 50, max: 100 },
+            { name: 'exceptional', min: 100, max: 250 },
+            { name: 'eclipse', min: 250, max: 500 },
+            { name: 'mythic', min: 500, max: 1000 },
+            { name: 'divine', min: 1000, max: 5000 },
+            { name: 'unordinary', min: 5000, max: 10000 },
+            { name: 'unreal', min: 10000, max: 50000 },
+            { name: 'eternal', min: 50000, max: 100000 },
+            { name: 'iridescence', min: 100000, max: 500000 },
+            { name: 'zeta', min: 500000: max: 1000000 },
+            { name: 'fantasy', min: 1000000, max: Infinity }
+        ];
+
+        const SECRETS = [
+            { name: 'weird', chance: 1000 },
+            { name: 'grand', chance: 5000 },
+            { name: 'defined', chance: 10000 },
+            { name: 'nil', chance: 50000 },
+            { name: 'impossible', chance: 100000 }
+        ];
+
+        // Game state
+        let polycoin = 0;
+        let bestRoll = 0;
+        let totalRolls = 0;
+        let bulkLevel = 1;
+        let bulkCost = 100;
+        let luckLevel = 0;
+        let luckCost = 10;
+        let secretLevel = 0;
+        let secretCost = 50;
+        let speedLevel = 0;
+        let speedCost = 50;
+        let invLevel = 0;
+        let invCost = 0;
+        let isRolling = false;
+        let inventory = [];
+        let pendingRolls = {};
+
+        // Load game on start
+        loadGame();
+
+        function toggleUpgrades() {
+            const content = document.getElementById('upgradesContent');
+            content.classList.toggle('open');
+        }
+
+        function getRNGColor(rng) {
+            if (rng < 10) return '#000000';
+            if (rng < 100) return '#ffc0cb';
+            if (rng < 1000) return '#90ee90';
+            if (rng < 10000) return '#9370db';
+            if (rng < 100000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
+            if (rng < 1000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
+            if (rng < 10000000) return 'linear-gradient(90deg, #000000, #8b0000)';
+            return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
+        }
+
+        function calculateRNG() {
+            const luck = luckLevel * 0.5;
+            const rng = Math.random() ** (-1.3 - (luck * 0.01));
+            return Math.max(1, rng);
+        }
+
+        function getRank(rng) {
+            for (let i = RANKS.length - 1; i >= 0; i--) {
+                if (rng >= RANKS[i].min) {
+                    return RANKS[i].name;
+                }
+            }
+            return RANKS[0].name;
+        }
+
+        function getVariant() {
+            for (let i = VARIANTS.length - 1; i >= 0; i--) {
+                const random = Math.random();
+                if (random <= 1 / VARIANTS[i].chance) {
+                    return VARIANTS[i];
+                }
+            }
+            return VARIANTS[0];
+        }
+
+        function checkSecret() {
+            const secretLuck = secretLevel * 0.2;
+            const random = Math.random();
+            for (let i = SECRETS.length - 1; i >= 0; i--) {
+                const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
+                if (random <= 1 / adjustedChance) {
+                    return SECRETS[i].name;
+                }
+            }
+            return null;
+        }
+
+        function updateRollers() {
+            const container = document.getElementById('rollersContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < bulkLevel; i++) {
+                const roller = document.createElement('div');
+                roller.className = 'roll-display';
+                roller.id = `roller-${i}`;
+                roller.innerHTML = `
+                    <div class="roll-result">Press Roll!</div>
+                    <div class="roll-actions" style="display: none;">
+                        <button class="accept-btn" onclick="acceptRoll(${i})">✓ Accept</button>
+                    </div>
+                    <div class="roll-name"></div>
+                    <div class="roll-variant"></div>
+                    <div class="roll-actions" style="display: none;">
+                        <button class="decline-btn" onclick="declineRoll(${i})">✗ Decline</button>
+                    </div>
+                `;
+                container.appendChild(roller);
+            }
+        }
+
+        function animateRoller(index) {
+            const roller = document.getElementById(`roller-${index}`);
+            if (!roller) return;
+            
+            const resultEl = roller.querySelector('.roll-result');
+            resultEl.classList.add('rolling');
+            
+            let counter = 0;
+            const interval = setInterval(() => {
+                resultEl.textContent = (Math.random() * 10000).toFixed(2);
+                counter++;
+                if (counter >= 15) {
+                    clearInterval(interval);
+                    resultEl.classList.remove('rolling');
+                }
+            }, 200);
+        }
+
+        function displayRoll(index, rng, rankName, variantName) {
+            const roller = document.getElementById(`roller-${index}`);
+            if (!roller) return;
+            
+            const resultEl = roller.querySelector('.roll-result');
+            const nameEl = roller.querySelector('.roll-name');
+            const variantEl = roller.querySelector('.roll-variant');
+            const actionElements = roller.querySelectorAll('.roll-actions');
+            
+            resultEl.textContent = rng.toFixed(2);
+            nameEl.textContent = rankName;
+            variantEl.textContent = variantName;
+            
+            actionElements.forEach(el => el.style.display = 'block');
+            
+            const color = getRNGColor(rng);
+            if (color.includes('gradient')) {
+                resultEl.style.background = color;
+                resultEl.style.webkitBackgroundClip = 'text';
+                resultEl.style.webkitTextFillColor = 'transparent';
+                resultEl.style.backgroundClip = 'text';
+            } else {
+                resultEl.style.background = 'none';
+                resultEl.style.webkitTextFillColor = 'inherit';
+                resultEl.style.color = color;
+            }
+        }
+
+        function acceptRoll(index) {
+            if (!pendingRolls[index]) return;
+            
+            const maxSlots = 10 + invLevel;
+            if (inventory.length >= maxSlots) {
+                alert('Inventory is full! Buy more slots or decline some rolls.');
+                return;
+            }
+            
+            inventory.unshift(pendingRolls[index]);
+            delete pendingRolls[index];
+            
+            const roller = document.getElementById(`roller-${index}`);
+            if (roller) {
+                const actionElements = roller.querySelectorAll('.roll-actions');
+                actionElements.forEach(el => el.style.display = 'none');
+            }
+            
+            updateInventory();
+            saveGame();
+        }
+
+        function declineRoll(index) {
+            if (!pendingRolls[index]) return;
+            
+            delete pendingRolls[index];
+            
+            const roller = document.getElementById(`roller-${index}`);
+            if (roller) {
+                const actionElements = roller.querySelectorAll('.roll-actions');
+                actionElements.forEach(el => el.style.display = 'none');
+            }
+        }
+
+        function deleteInventoryItem(index) {
+            inventory.splice(index, 1);
+            updateInventory();
+            saveGame();
+        }
+
+        function roll() {
+            if (isRolling) return;
+            
+            isRolling = true;
+            document.getElementById('rollBtn').disabled = true;
+            
+            for (let i = 0; i < bulkLevel; i++) {
+                animateRoller(i);
+            }
+            
+            const rollSpeed = Math.max(0.5, 3 - (speedLevel * 0.1));
+            
+            setTimeout(() => {
+                for (let i = 0; i < bulkLevel; i++) {
+                    let rng = calculateRNG();
+                    const variant = getVariant();
+                    rng = rng * variant.multiplesRNG;
+                    
+                    const secret = checkSecret();
+                    const rankName = secret || getRank(rng);
+                    
+                    const gain = Math.floor(Math.pow(rng, 0.8) * 0.75);
+                    polycoin += gain;
+                    totalRolls++;
+                    
+                    if (rng > bestRoll) {
+                        bestRoll = rng;
+                    }
+                    
+                    displayRoll(i, rng, rankName, variant.name);
+                    
+                    pendingRolls[i] = {
+                        rng: rng,
+                        rank: rankName,
+                        variant: variant.name,
+                        timestamp: Date.now()
+                    };
+                }
+                
+                updateUI();
+                saveGame();
+                isRolling = false;
+                document.getElementById('rollBtn').disabled = false;
+            }, rollSpeed * 1000);
+        }
+
+        function buyUpgrade(type) {
+            if (type === 'bulk') {
+                if (bulkLevel >= 3 || polycoin < bulkCost) return;
+                polycoin -= bulkCost;
+                bulkLevel++;
+                bulkCost *= 100;
+                updateRollers();
+            } else if (type === 'luck') {
+                if (luckLevel >= 100 || polycoin < luckCost) return;
+                polycoin -= luckCost;
+                luckLevel++;
+                luckCost = Math.floor(luckCost * 1.15);
+            } else if (type === 'secret') {
+                if (secretLevel >= 25 || polycoin < secretCost) return;
+                polycoin -= secretCost;
+                secretLevel++;
+                secretCost = Math.floor(secretCost * 1.3333);
+            } else if (type === 'speed') {
+                if (speedLevel >= 25 || polycoin < speedCost) return;
+                polycoin -= speedCost;
+                speedLevel++;
+                speedCost = Math.floor(speedCost * 1.15);
+            } else if (type === 'inventory') {
+                if (invLevel >= 40 || polycoin < invCost) return;
+                polycoin -= invCost;
+                invLevel++;
+            }
+            updateUI();
+            saveGame();
+        }
+
+        function updateInventory() {
+            const list = document.getElementById('inventoryList');
+            const maxSlots = 10 + invLevel;
+            
+            document.getElementById('invCount').textContent = inventory.length;
+            document.getElementById('invMax').textContent = maxSlots;
+            
+            if (inventory.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999;">No accepted rolls yet!</div>';
+                return;
+            }
+            
+            list.innerHTML = inventory.map((item, index) => {
+                const color = getRNGColor(item.rng);
+                let style = `color: ${color};`;
+                if (color.includes('gradient')) {
+                    style = `background: ${color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;`;
+                }
+                
+                return `
+                    <div class="inventory-item">
+                        <div>
+                            <span class="inventory-rng" style="${style}">${item.rng.toFixed(2)}</span>
+                            <div class="inventory-details">${item.rank} - ${item.variant}</div>
+                        </div>
+                        <button class="decline-btn" onclick="deleteInventoryItem(${index})" style="padding: 5px 15px; font-size: 12px;">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateInvCost() {
+            if (invLevel === 0) return 0;
+            return Math.floor(20 * Math.log(invLevel) / Math.log(3));
+        }
+
+        function updateUI() {
+            document.getElementById('polycoin').textContent = Math.floor(polycoin).toLocaleString();
+            document.getElementById('best').textContent = bestRoll.toFixed(2);
+            document.getElementById('rolls').textContent = totalRolls.toLocaleString();
+            
+            document.getElementById('bulkLevel').textContent = bulkLevel;
+            document.getElementById('bulkCost').textContent = bulkCost.toLocaleString();
+            document.getElementById('bulkBtn').disabled = bulkLevel >= 3 || polycoin < bulkCost;
+            
+            document.getElementById('luckLevel').textContent = luckLevel;
+            document.getElementById('luckAmount').textContent = (luckLevel * 0.5).toFixed(1);
+            document.getElementById('luckCost').textContent = luckCost.toLocaleString();
+            document.getElementById('luckBtn').disabled = luckLevel >= 100 || polycoin < luckCost;
+            
+            document.getElementById('secretLevel').textContent = secretLevel;
+            document.getElementById('secretAmount').textContent = (secretLevel * 0.2).toFixed(1);
+            document.getElementById('secretCost').textContent = secretCost.toLocaleString();
+            document.getElementById('secretBtn').disabled = secretLevel >= 25 || polycoin < secretCost;
+            
+            document.getElementById('speedLevel').textContent = speedLevel;
+            document.getElementById('speedAmount').textContent = Math.max(0.5, 3 - (speedLevel * 0.1)).toFixed(1);
+            document.getElementById('speedCost').textContent = speedCost.toLocaleString();
+            document.getElementById('speedBtn').disabled = speedLevel >= 25 || polycoin < speedCost;
+            
+            const nextInvCost = calculateInvCost();
+            document.getElementById('invLevel').textContent = 10 + invLevel;
+            document.getElementById('invCost').textContent = nextInvCost.toLocaleString();
+            document.getElementById('invBtn').disabled = invLevel >= 40 || polycoin < nextInvCost;
+            invCost = nextInvCost;
+        }
+
+        async function saveGame() {
+            try {
+                const saveData = {
+                    polycoin,
+                    bestRoll,
+                    totalRolls,
+                    bulkLevel,
+                    bulkCost,
+                    luckLevel,
+                    luckCost,
+                    secretLevel,
+                    secretCost,
+                    speedLevel,
+                    speedCost,
+                    invLevel,
+                    inventory
+                };
+                await window.storage.set('polys-rng-save', JSON.stringify(saveData));
+            } catch (error) {
+                console.error('Failed to save game:', error);
+            }
+        }
+
+        async function loadGame() {
+            try {
+                const result = await window.storage.get('polys-rng-save');
+                if (result && result.value) {
+                    const saveData = JSON.parse(result.value);
+                    polycoin = saveData.polycoin || 0;
+                    bestRoll = saveData.bestRoll || 0;
+                    totalRolls = saveData.totalRolls || 0;
+                    bulkLevel = saveData.bulkLevel || 1;
+                    bulkCost = saveData.bulkCost || 100;
+                    luckLevel = saveData.luckLevel || 0;
+                    luckCost = saveData.luckCost || 10;
+                    secretLevel = saveData.secretLevel || 0;
+                    secretCost = saveData.secretCost || 50;
+                    speedLevel = saveData.speedLevel || 0;
+                    speedCost = saveData.speedCost || 50;
+                    invLevel = saveData.invLevel || 0;
+                    inventory = saveData.inventory || [];
+                }
+            } catch (error) {
+                console.log('No save data found or error loading:', error);
+            }
+            
+            updateRollers();
+            updateInventory();
+            updateUI();
+        }
+
+        updateRollers();
+        updateUI();
+    </script>
+</body>
+</html>
