@@ -571,9 +571,13 @@
         ];
 
         const SECRETS = [
+            { name: 'terrible', chance: 250 },
             { name: 'weird', chance: 1000 },
+            { name: 'best', chance: 2000 },
+            { name: 'invisible', chance: 3530 },
             { name: 'grand', chance: 5000 },
             { name: 'defined', chance: 10000 },
+            { name: '?!?!?', chance: 25000 },
             { name: 'nil', chance: 50000 },
             { name: 'impossible', chance: 100000 }
         ];
@@ -581,8 +585,8 @@
         const ENCHANT_TYPES = [
             { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5 },
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5 },
-            { name: 'speed i', type: 'speed', value: 0.25, color: '#87ceeb', chance: 1/2.5 },
-            { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', chance: 1/10 },
+            { name: 'speed i', type: 'speed', value: -0.25, color: '#87ceeb', chance: 1/2.5 },
+            { name: 'speed ii', type: 'speed', value: -0.5, color: '#1e90ff', chance: 1/10 },
             { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10 },
             { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50 },
             { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500 },
