@@ -11,7 +11,83 @@
             font-family: arial, sans-serif;
             background: linear-gradient(135deg, #ffc0cb 0%, #ffffff 100%);
             min-height: 100vh;
+            transition: background 0.5s, color 0.5s;
         }
+        
+        body.dark-mode {
+            background: linear-gradient(135deg, #2d2d2d 0%, #000000 100%);
+            color: #fff;
+        }
+        
+        body.dark-mode .container {
+            background: rgba(30, 30, 30, 0.9);
+            color: #fff;
+        }
+        
+        body.dark-mode .stat-box {
+            background: #333;
+        }
+        
+        body.dark-mode .stat-label {
+            color: #ccc;
+        }
+        
+        body.dark-mode .roll-display {
+            background: #222;
+            border-color: #ff69b4;
+        }
+        
+        body.dark-mode .rng-box {
+            background: transparent;
+        }
+        
+        body.dark-mode .upgrade-box,
+        body.dark-mode .inventory,
+        body.dark-mode .enchant-inventory,
+        body.dark-mode .index-category {
+            background: #333;
+            color: #fff;
+        }
+        
+        body.dark-mode .inventory-item,
+        body.dark-mode .enchant-item {
+            background: #444;
+        }
+        
+        body.dark-mode .upgrade-title {
+            color: #ff69b4;
+        }
+        
+        body.dark-mode .upgrade-info {
+            color: #ccc;
+        }
+        
+        body.dark-mode button {
+            background: #555;
+        }
+        
+        body.dark-mode button:hover {
+            background: #777;
+        }
+        
+        .dark-mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+        }
+        
+        body.dark-mode .dark-mode-toggle {
+            background: #666;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -329,6 +405,8 @@
     </style>
 </head>
 <body>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    
     <div class="container">
         <h1>polys silly rngame</h1>
         
@@ -395,6 +473,18 @@
                             <div class="upgrade-info">slots: <span id="invLevel">10</span>/50</div>
                             <div class="upgrade-info">effect: +1 inventory slot</div>
                             <button onclick="buyUpgrade('inventory')" id="invBtn">buy (cost: <span id="invCost">0</span>)</button>
+                        </div>
+                        <div class="upgrade-box">
+                            <div class="upgrade-title">enchant luck</div>
+                            <div class="upgrade-info">level: <span id="enchantLuckLevel">0</span>/15</div>
+                            <div class="upgrade-info">effect: +<span id="enchantLuckAmount">0</span> enchant luck</div>
+                            <button onclick="buyUpgrade('enchantLuck')" id="enchantLuckBtn">buy (cost: <span id="enchantLuckCost">30</span>)</button>
+                        </div>
+                        <div class="upgrade-box">
+                            <div class="upgrade-title">variant luck</div>
+                            <div class="upgrade-info">level: <span id="variantLuckLevel">0</span>/30</div>
+                            <div class="upgrade-info">effect: +<span id="variantLuckAmount">0</span> variant luck</div>
+                            <button onclick="buyUpgrade('variantLuck')" id="variantLuckBtn">buy (cost: <span id="variantLuckCost">50</span>)</button>
                         </div>
                     </div>
                 </div>
@@ -488,16 +578,20 @@
             { name: 'impossible', chance: 100000 }
         ];
 
-        const ENCHANT_TYPES = {
-            'luck i': { chance: 1/1.5, type: 'luck', value: 5, color: '#90ee90' },
-            'luck ii': { chance: 1/5, type: 'luck', value: 10, color: '#00ff00' },
-            'speed i': { chance: 1/2.5, type: 'speed', value: -0.25, color: '#87ceeb' },
-            'speed ii': { chance: 1/10, type: 'speed', value: -0.5, color: '#1e90ff' },
-            'insight i': { chance: 1/10, type: 'secret', value: 5, color: '#9370db' },
-            'insight ii': { chance: 1/50, type: 'secret', value: 25, color: '#8a2be2' },
-            'requiem i': { chance: 1/500, type: 'requiem', value: 1, color: '#ff4500' },
-            'requiem ii': { chance: 1/10000, type: 'requiem', value: 2, color: '#dc143c' }
-        };
+        const ENCHANT_TYPES = [
+            { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5 },
+            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5 },
+            { name: 'speed i', type: 'speed', value: -0.25, color: '#87ceeb', chance: 1/2.5 },
+            { name: 'speed ii', type: 'speed', value: -0.5, color: '#1e90ff', chance: 1/10 },
+            { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10 },
+            { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50 },
+            { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500 },
+            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/10000 },
+            { name: 'variant i', type: 'variant', value: 0.5, color: '#ffc0cb', chance: 1/25 },
+            { name: 'variant ii', type: 'variant', value: 2.5, color: '#ff69b4', chance: 1/100 },
+            { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60 },
+            { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75 }
+        ];
 
         // game state
         let polycoin = 0;
@@ -513,11 +607,29 @@
         let speedCost = 50;
         let invLevel = 0;
         let invCost = 0;
+        let enchantLuckLevel = 0;
+        let enchantLuckCost = 30;
+        let variantLuckLevel = 0;
+        let variantLuckCost = 50;
         let isRolling = false;
         let inventory = [];
         let enchantInventory = [];
-        let equippedEnchant = null;
+        let equippedEnchants = {}; // Now an object to hold multiple equipped enchants
         let pendingRolls = {};
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const button = document.querySelector('.dark-mode-toggle');
+            button.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        // Initialize dark mode
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.dark-mode-toggle').textContent = '☀️ Light Mode';
+        }
 
         // load game on start
         loadGame();
@@ -548,29 +660,50 @@
 
         function getTotalEnchantLuck() {
             let total = 0;
-            if (equippedEnchant) {
-                if (equippedEnchant.type === 'luck') total += equippedEnchant.value;
-                if (equippedEnchant.type === 'requiem') total += (equippedEnchant.value === 1 ? 5 : 10);
+            if (equippedEnchants.luck) total += equippedEnchants.luck.value;
+            if (equippedEnchants.requiem) {
+                total += equippedEnchants.requiem.value === 1 ? 5 : 10;
             }
+            if (equippedEnchants.greed) total -= 20;
+            if (equippedEnchants.patience) total += 100;
             return total;
         }
 
         function getTotalEnchantSecret() {
             let total = 0;
-            if (equippedEnchant) {
-                if (equippedEnchant.type === 'secret') total += equippedEnchant.value;
-                if (equippedEnchant.type === 'requiem') total += (equippedEnchant.value === 1 ? 5 : 25);
+            if (equippedEnchants.secret) total += equippedEnchants.secret.value;
+            if (equippedEnchants.requiem) {
+                total += equippedEnchants.requiem.value === 1 ? 5 : 25;
             }
             return total;
         }
 
         function getTotalEnchantSpeed() {
             let total = 0;
-            if (equippedEnchant) {
-                if (equippedEnchant.type === 'speed') total += equippedEnchant.value;
-                if (equippedEnchant.type === 'requiem') total += (equippedEnchant.value === 1 ? -0.25 : -0.5);
+            if (equippedEnchants.speed) total += equippedEnchants.speed.value;
+            if (equippedEnchants.requiem) {
+                total += equippedEnchants.requiem.value === 1 ? -0.25 : -0.5;
             }
+            if (equippedEnchants.greed) total += 0.7; // Slower speed = positive value
+            if (equippedEnchants.patience) total += 25; // Much slower
             return total;
+        }
+
+        function getTotalEnchantVariant() {
+            let total = variantLuckLevel * 0.05;
+            if (equippedEnchants.variant) total += equippedEnchants.variant.value;
+            if (equippedEnchants.requiem) {
+                total += equippedEnchants.requiem.value === 1 ? 0.5 : 2.5;
+            }
+            if (equippedEnchants.patience) total += 5;
+            return total;
+        }
+
+        function getTotalBulkRolls() {
+            let total = bulkLevel;
+            if (equippedEnchants.greed) total += 2;
+            if (equippedEnchants.patience) total += 3;
+            return Math.min(total, 3); // Cap at 3 rollers on screen
         }
 
         function getRank(rng) {
@@ -583,9 +716,11 @@
         }
 
         function getVariant() {
+            const variantLuck = getTotalEnchantVariant();
             for (let i = VARIANTS.length - 1; i >= 0; i--) {
+                const adjustedChance = VARIANTS[i].chance / (1 + variantLuck);
                 const random = Math.random();
-                if (random <= 1 / VARIANTS[i].chance) {
+                if (random <= 1 / adjustedChance) {
                     return VARIANTS[i];
                 }
             }
@@ -608,26 +743,17 @@
             if (baseRng < 500) return [];
             
             const generated = [];
-            const typesFound = new Set();
+            const enchantLuck = enchantLuckLevel * 0.05;
             
-            // Convert ENCHANT_TYPES object to array
-            const enchantArray = Object.entries(ENCHANT_TYPES).map(([name, data]) => ({
-                name: name,
-                chance: data.chance,
-                type: data.type,
-                value: data.value,
-                color: data.color
-            }));
-            
-            enchantArray.forEach(enchant => {
-                if (Math.random() <= enchant.chance && !typesFound.has(enchant.type)) {
+            ENCHANT_TYPES.forEach(enchant => {
+                const adjustedChance = enchant.chance * (1 + enchantLuck);
+                if (Math.random() <= adjustedChance) {
                     generated.push({
                         name: enchant.name,
                         type: enchant.type,
                         value: enchant.value,
                         color: enchant.color
                     });
-                    typesFound.add(enchant.type);
                 }
             });
             
@@ -637,7 +763,8 @@
         function updateRollers() {
             const container = document.getElementById('rollersContainer');
             container.innerHTML = '';
-            for (let i = 0; i < bulkLevel; i++) {
+            const totalRollers = getTotalBulkRolls();
+            for (let i = 0; i < totalRollers; i++) {
                 const roller = document.createElement('div');
                 roller.className = 'roll-display';
                 roller.id = `roller-${i}`;
@@ -671,26 +798,34 @@
             nameEl.textContent = '';
             enchantsBox.innerHTML = '';
             
-            // create single flipping cube
-            const cubeContainer = document.createElement('div');
-            cubeContainer.className = 'cube flipping';
-            cubeContainer.style.display = 'flex';
-            cubeContainer.style.justifyContent = 'center';
-            cubeContainer.style.alignItems = 'center';
+            // Clear any previous content
             resultEl.innerHTML = '';
-            resultEl.appendChild(cubeContainer);
             
-            let counter = 0;
-            const interval = setInterval(() => {
-                // use the same rng formula for animation numbers
-                const animatedRNG = Math.random() ** (-1.3 - (luckLevel * 0.5 * 0.01));
-                cubeContainer.textContent = Math.max(1, animatedRNG * 10).toFixed(0);
-                counter++;
-                if (counter >= 15) {
-                    clearInterval(interval);
-                    resultEl.classList.remove('flipping');
+            // Create cube element
+            const cube = document.createElement('div');
+            cube.className = 'cube flipping';
+            resultEl.appendChild(cube);
+            
+            // Start animation
+            let animationCount = 0;
+            const maxAnimations = 15;
+            
+            function updateAnimation() {
+                if (animationCount >= maxAnimations) {
+                    return;
                 }
-            }, 200);
+                
+                // Generate random number for animation
+                const animatedRNG = Math.random() ** (-1.3);
+                cube.textContent = Math.floor(Math.max(1, animatedRNG * 10));
+                
+                animationCount++;
+                if (animationCount < maxAnimations) {
+                    setTimeout(updateAnimation, 150);
+                }
+            }
+            
+            updateAnimation();
         }
 
         function displayRoll(index, baseRng, finalRng, rankName, variantName, generatedEnchants) {
@@ -703,8 +838,8 @@
             const enchantsBox = roller.querySelector('.enchants-box');
             const actionElements = roller.querySelector('.roll-actions');
             
-            // clear animation cube
-            resultEl.innerHTML = '';
+            // Stop animation and clear cube
+            resultEl.classList.remove('flipping');
             resultEl.textContent = finalRng.toFixed(2);
             
             variantBox.textContent = variantName;
@@ -715,6 +850,8 @@
                 enchantsBox.innerHTML = generatedEnchants.map(enchant => 
                     `<span class="enchant-tag" style="background: ${enchant.color}">${enchant.name}</span>`
                 ).join('');
+            } else {
+                enchantsBox.innerHTML = '';
             }
             
             actionElements.style.display = 'flex';
@@ -747,12 +884,20 @@
             // add enchants to enchant inventory
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
                 pendingRolls[index].enchants.forEach(enchant => {
-                    enchantInventory.push({
-                        ...enchant,
-                        id: Date.now() + Math.random(),
-                        sourceRNG: pendingRolls[index].finalRng,
-                        variant: pendingRolls[index].variant
-                    });
+                    const existing = enchantInventory.find(e => 
+                        e.name === enchant.name && 
+                        e.type === enchant.type &&
+                        Math.abs(e.sourceRNG - pendingRolls[index].finalRng) < 0.01
+                    );
+                    
+                    if (!existing) {
+                        enchantInventory.push({
+                            ...enchant,
+                            id: Date.now() + Math.random(),
+                            sourceRNG: pendingRolls[index].finalRng,
+                            variant: pendingRolls[index].variant
+                        });
+                    }
                 });
             }
             
@@ -789,27 +934,32 @@
         }
 
         function deleteEnchantItem(index) {
-            // If deleting equipped enchant, unequip it first
-            if (equippedEnchant && equippedEnchant.id === enchantInventory[index].id) {
-                equippedEnchant = null;
+            // Remove from equipped if equipped
+            const enchant = enchantInventory[index];
+            if (equippedEnchants[enchant.type] && equippedEnchants[enchant.type].id === enchant.id) {
+                delete equippedEnchants[enchant.type];
             }
             enchantInventory.splice(index, 1);
             updateEnchantInventory();
             updateUI();
+            updateRollers(); // Update rollers to reflect bulk roll changes
             saveGame();
         }
 
         function equipEnchant(index) {
-            equippedEnchant = enchantInventory[index];
+            const enchant = enchantInventory[index];
+            equippedEnchants[enchant.type] = enchant;
             updateEnchantInventory();
             updateUI();
+            updateRollers(); // Update rollers to reflect bulk roll changes
             saveGame();
         }
 
-        function unequipEnchant() {
-            equippedEnchant = null;
+        function unequipEnchant(type) {
+            delete equippedEnchants[type];
             updateEnchantInventory();
             updateUI();
+            updateRollers(); // Update rollers to reflect bulk roll changes
             saveGame();
         }
 
@@ -819,7 +969,8 @@
             isRolling = true;
             document.getElementById('rollBtn').disabled = true;
             
-            for (let i = 0; i < bulkLevel; i++) {
+            const totalRollers = getTotalBulkRolls();
+            for (let i = 0; i < totalRollers; i++) {
                 animateRoller(i);
             }
             
@@ -828,7 +979,7 @@
             const rollSpeed = Math.max(0.5, baseSpeed - speedReduction);
             
             setTimeout(() => {
-                for (let i = 0; i < bulkLevel; i++) {
+                for (let i = 0; i < totalRollers; i++) {
                     const baseRng = calculateRNG();
                     const variant = getVariant();
                     const finalRng = baseRng * variant.multipliesRNG;
@@ -893,6 +1044,16 @@
                 if (invLevel >= 40 || polycoin < nextInvCost) return;
                 polycoin -= nextInvCost;
                 invLevel++;
+            } else if (type === 'enchantLuck') {
+                if (enchantLuckLevel >= 15 || polycoin < enchantLuckCost) return;
+                polycoin -= enchantLuckCost;
+                enchantLuckLevel++;
+                enchantLuckCost = Math.floor(enchantLuckCost * 1.175);
+            } else if (type === 'variantLuck') {
+                if (variantLuckLevel >= 30 || polycoin < variantLuckCost) return;
+                polycoin -= variantLuckCost;
+                variantLuckLevel++;
+                variantLuckCost = Math.floor(variantLuckCost * 1.2);
             }
             updateUI();
             saveGame();
@@ -941,29 +1102,35 @@
             document.getElementById('enchants').textContent = enchantInventory.length;
             
             // Update equipped enchant display
-            if (!equippedEnchant) {
-                equippedList.innerHTML = '<div style="text-align: center; color: #999;">no enchant equipped!</div>';
+            const equippedEntries = Object.entries(equippedEnchants);
+            if (equippedEntries.length === 0) {
+                equippedList.innerHTML = '<div style="text-align: center; color: #999;">no enchants equipped!</div>';
             } else {
-                let effectText = '';
-                if (equippedEnchant.type === 'luck') effectText = `+${equippedEnchant.value} luck`;
-                if (equippedEnchant.type === 'speed') effectText = `${equippedEnchant.value}s speed`;
-                if (equippedEnchant.type === 'secret') effectText = `+${equippedEnchant.value} secret`;
-                if (equippedEnchant.type === 'requiem') {
-                    effectText = equippedEnchant.value === 1 
-                        ? '+5 luck, -0.25s speed, +5 secret'
-                        : '+10 luck, -0.5s speed, +25 secret';
-                }
-                
-                equippedList.innerHTML = `
-                    <div class="inventory-item">
-                        <div>
-                            <span style="color: ${equippedEnchant.color}; font-weight: bold;">${equippedEnchant.name}</span>
-                            <div style="font-size: 12px; color: #666;">${effectText}</div>
-                            <div style="font-size: 11px; color: #999;">from: ${equippedEnchant.sourceRNG.toFixed(2)} ${equippedEnchant.variant}</div>
+                equippedList.innerHTML = equippedEntries.map(([type, enchant]) => {
+                    let effectText = '';
+                    if (enchant.type === 'luck') effectText = `+${enchant.value} luck`;
+                    if (enchant.type === 'speed') effectText = `${enchant.value}s speed`;
+                    if (enchant.type === 'secret') effectText = `+${enchant.value} secret`;
+                    if (enchant.type === 'variant') effectText = `+${enchant.value} variant luck`;
+                    if (enchant.type === 'requiem') {
+                        effectText = enchant.value === 1 
+                            ? '+5 luck, -0.25s speed, +5 secret, +0.5 variant'
+                            : '+10 luck, -0.5s speed, +25 secret, +2.5 variant';
+                    }
+                    if (enchant.type === 'greed') effectText = '+2 bulk roll, -20 luck, +0.7s speed';
+                    if (enchant.type === 'patience') effectText = '+3 bulk roll, +100 luck, +25s speed, +5 variant';
+                    
+                    return `
+                        <div class="inventory-item">
+                            <div>
+                                <span style="color: ${enchant.color}; font-weight: bold;">${enchant.name}</span>
+                                <div style="font-size: 12px; color: #666;">${effectText}</div>
+                                <div style="font-size: 11px; color: #999;">from: ${enchant.sourceRNG ? enchant.sourceRNG.toFixed(2) : '?'} ${enchant.variant || ''}</div>
+                            </div>
+                            <button class="unequip-btn" onclick="unequipEnchant('${type}')" style="padding: 5px 15px; font-size: 12px;">unequip</button>
                         </div>
-                        <button class="unequip-btn" onclick="unequipEnchant()" style="padding: 5px 15px; font-size: 12px;">unequip</button>
-                    </div>
-                `;
+                    `;
+                }).join('');
             }
             
             // Update enchant inventory list
@@ -977,20 +1144,23 @@
                 if (enchant.type === 'luck') effectText = `+${enchant.value} luck`;
                 if (enchant.type === 'speed') effectText = `${enchant.value}s speed`;
                 if (enchant.type === 'secret') effectText = `+${enchant.value} secret`;
+                if (enchant.type === 'variant') effectText = `+${enchant.value} variant luck`;
                 if (enchant.type === 'requiem') {
                     effectText = enchant.value === 1 
-                        ? '+5 luck, -0.25s speed, +5 secret'
-                        : '+10 luck, -0.5s speed, +25 secret';
+                        ? '+5 luck, -0.25s speed, +5 secret, +0.5 variant'
+                        : '+10 luck, -0.5s speed, +25 secret, +2.5 variant';
                 }
+                if (enchant.type === 'greed') effectText = '+2 bulk roll, -20 luck, +0.7s speed';
+                if (enchant.type === 'patience') effectText = '+3 bulk roll, +100 luck, +25s speed, +5 variant';
                 
-                const isEquipped = equippedEnchant && equippedEnchant.id === enchant.id;
+                const isEquipped = equippedEnchants[enchant.type] && equippedEnchants[enchant.type].id === enchant.id;
                 
                 return `
                     <div class="inventory-item">
                         <div>
                             <span style="color: ${enchant.color}; font-weight: bold;">${enchant.name}</span>
                             <div style="font-size: 12px; color: #666;">${effectText}</div>
-                            <div style="font-size: 11px; color: #999;">from: ${enchant.sourceRNG.toFixed(2)} ${enchant.variant}</div>
+                            <div style="font-size: 11px; color: #999;">from: ${enchant.sourceRNG ? enchant.sourceRNG.toFixed(2) : '?'} ${enchant.variant || ''}</div>
                         </div>
                         <div>
                             ${isEquipped ? 
@@ -1024,18 +1194,21 @@
             document.getElementById('secretsIndex').innerHTML = secretsHTML;
             
             // enchants index
-            const enchantsHTML = Object.entries(ENCHANT_TYPES).map(([name, data]) => {
+            const enchantsHTML = ENCHANT_TYPES.map(enchant => {
                 let effect = '';
-                if (data.type === 'luck') effect = `+${data.value} luck`;
-                if (data.type === 'speed') effect = `${data.value}s speed`;
-                if (data.type === 'secret') effect = `+${data.value} secret`;
-                if (data.type === 'requiem') {
-                    effect = data.value === 1 
-                        ? '+5 luck, -0.25s speed, +5 secret'
-                        : '+10 luck, -0.5s speed, +25 secret';
+                if (enchant.type === 'luck') effect = `+${enchant.value} luck`;
+                if (enchant.type === 'speed') effect = `${enchant.value}s speed`;
+                if (enchant.type === 'secret') effect = `+${enchant.value} secret`;
+                if (enchant.type === 'variant') effect = `+${enchant.value} variant luck`;
+                if (enchant.type === 'requiem') {
+                    effect = enchant.value === 1 
+                        ? '+5 luck, -0.25s speed, +5 secret, +0.5 variant'
+                        : '+10 luck, -0.5s speed, +25 secret, +2.5 variant';
                 }
-                const chanceDisplay = Math.round(1/data.chance);
-                return `<div class="index-item">${name}: ${effect} (1/${chanceDisplay})</div>`;
+                if (enchant.type === 'greed') effect = '+2 bulk roll, -20 luck, +0.7s speed';
+                if (enchant.type === 'patience') effect = '+3 bulk roll, +100 luck, +25s speed, +5 variant';
+                const chanceDisplay = Math.round(1/enchant.chance);
+                return `<div class="index-item">${enchant.name}: ${effect} (1/${chanceDisplay})</div>`;
             }).join('');
             document.getElementById('enchantsIndex').innerHTML = enchantsHTML;
         }
@@ -1074,6 +1247,16 @@
             document.getElementById('invLevel').textContent = 10 + invLevel;
             document.getElementById('invCost').textContent = nextInvCost.toLocaleString();
             document.getElementById('invBtn').disabled = invLevel >= 40 || polycoin < nextInvCost;
+            
+            document.getElementById('enchantLuckLevel').textContent = enchantLuckLevel;
+            document.getElementById('enchantLuckAmount').textContent = (enchantLuckLevel * 0.05).toFixed(2);
+            document.getElementById('enchantLuckCost').textContent = enchantLuckCost.toLocaleString();
+            document.getElementById('enchantLuckBtn').disabled = enchantLuckLevel >= 15 || polycoin < enchantLuckCost;
+            
+            document.getElementById('variantLuckLevel').textContent = variantLuckLevel;
+            document.getElementById('variantLuckAmount').textContent = (variantLuckLevel * 0.05).toFixed(2);
+            document.getElementById('variantLuckCost').textContent = variantLuckCost.toLocaleString();
+            document.getElementById('variantLuckBtn').disabled = variantLuckLevel >= 30 || polycoin < variantLuckCost;
         }
 
         function saveGame() {
@@ -1091,9 +1274,34 @@
                     speedLevel,
                     speedCost,
                     invLevel,
-                    inventory,
-                    enchantInventory,
-                    equippedEnchant
+                    enchantLuckLevel,
+                    enchantLuckCost,
+                    variantLuckLevel,
+                    variantLuckCost,
+                    inventory: inventory.map(item => ({
+                        ...item,
+                        enchants: item.enchants ? item.enchants.map(e => ({
+                            name: e.name,
+                            type: e.type,
+                            value: e.value,
+                            color: e.color
+                        })) : []
+                    })),
+                    enchantInventory: enchantInventory.map(e => ({
+                        ...e,
+                        sourceRNG: e.sourceRNG,
+                        variant: e.variant
+                    })),
+                    equippedEnchants: Object.fromEntries(
+                        Object.entries(equippedEnchants).map(([type, enchant]) => [
+                            type,
+                            {
+                                ...enchant,
+                                sourceRNG: enchant.sourceRNG,
+                                variant: enchant.variant
+                            }
+                        ])
+                    )
                 };
                 localStorage.setItem('polys-rng-save', JSON.stringify(saveData));
             } catch (error) {
@@ -1106,6 +1314,8 @@
                 const result = localStorage.getItem('polys-rng-save');
                 if (result) {
                     const saveData = JSON.parse(result);
+                    
+                    // Load basic stats
                     polycoin = saveData.polycoin || 0;
                     bestRoll = saveData.bestRoll || 0;
                     totalRolls = saveData.totalRolls || 0;
@@ -1118,12 +1328,38 @@
                     speedLevel = saveData.speedLevel || 0;
                     speedCost = saveData.speedCost || 50;
                     invLevel = saveData.invLevel || 0;
+                    enchantLuckLevel = saveData.enchantLuckLevel || 0;
+                    enchantLuckCost = saveData.enchantLuckCost || 30;
+                    variantLuckLevel = saveData.variantLuckLevel || 0;
+                    variantLuckCost = saveData.variantLuckCost || 50;
+                    
+                    // Load inventory with migration for old format
                     inventory = saveData.inventory || [];
+                    inventory.forEach(item => {
+                        if (!item.enchants) item.enchants = [];
+                    });
+                    
+                    // Load enchant inventory with migration
                     enchantInventory = saveData.enchantInventory || [];
-                    equippedEnchant = saveData.equippedEnchant || null;
+                    
+                    // Load equipped enchants with migration from old format
+                    if (saveData.equippedEnchant) {
+                        // Old single enchant format
+                        equippedEnchants = {};
+                        if (saveData.equippedEnchant.type) {
+                            equippedEnchants[saveData.equippedEnchant.type] = saveData.equippedEnchant;
+                        }
+                    } else if (saveData.equippedEnchants) {
+                        // New multiple enchant format
+                        equippedEnchants = saveData.equippedEnchants;
+                    } else {
+                        equippedEnchants = {};
+                    }
                 }
             } catch (error) {
                 console.log('no save data found or error loading:', error);
+                // Initialize with defaults
+                equippedEnchants = {};
             }
             
             updateRollers();
