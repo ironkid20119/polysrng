@@ -976,7 +976,7 @@
             
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
-            const rollSpeed = Math.max(0.5, baseSpeed - speedReduction);
+            const rollSpeed = Math.max(0.5, baseSpeed + speedReduction);
             
             setTimeout(() => {
                 for (let i = 0; i < totalRollers; i++) {
