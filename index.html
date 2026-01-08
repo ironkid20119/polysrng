@@ -581,8 +581,8 @@
         const ENCHANT_TYPES = [
             { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5 },
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5 },
-            { name: 'speed i', type: 'speed', value: -0.25, color: '#87ceeb', chance: 1/2.5 },
-            { name: 'speed ii', type: 'speed', value: -0.5, color: '#1e90ff', chance: 1/10 },
+            { name: 'speed i', type: 'speed', value: 0.25, color: '#87ceeb', chance: 1/2.5 },
+            { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', chance: 1/10 },
             { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10 },
             { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50 },
             { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500 },
@@ -682,10 +682,10 @@
             let total = 0;
             if (equippedEnchants.speed) total += equippedEnchants.speed.value;
             if (equippedEnchants.requiem) {
-                total += equippedEnchants.requiem.value === 1 ? -0.25 : -0.5;
+                total += equippedEnchants.requiem.value === 1 ? 0.25 : 0.5;
             }
-            if (equippedEnchants.greed) total += 0.7; // Slower speed = positive value
-            if (equippedEnchants.patience) total += 25; // Much slower
+            if (equippedEnchants.greed) total -= 0.7; // Slower speed = positive value
+            if (equippedEnchants.patience) total -= 25; // Much slower
             return total;
         }
 
@@ -976,7 +976,7 @@
             
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
-            const rollSpeed = Math.max(0.5, baseSpeed + speedReduction);
+            const rollSpeed = Math.max(0.5, baseSpeed - speedReduction);
             
             setTimeout(() => {
                 for (let i = 0; i < totalRollers; i++) {
