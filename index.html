@@ -642,13 +642,13 @@
         }
 
         function getRNGColor(rng) {
-            if (rng < 10) return '#000000';
-            if (rng < 100) return '#ffc0cb';
-            if (rng < 1000) return '#90ee90';
-            if (rng < 10000) return '#9370db';
-            if (rng < 100000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
-            if (rng < 1000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
-            if (rng < 10000000) return 'linear-gradient(90deg, #000000, #8b0000)';
+            if (rng < 1000) return '#000000';
+            if (rng < 10000) return '#ffc0cb';
+            if (rng < 100000) return '#90ee90';
+            if (rng < 1000000) return '#9370db';
+            if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
+            if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
+            if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
             return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
         }
 
