@@ -861,17 +861,24 @@
         }
 
         function getRNGColor(rng, rankName) {
-            if (rankName === 'solar') return 'orange';
-            if (rng < 1000) return '#aad7e6';
-            if (rng < 10000) return '#ffc0cb';
-            if (rng < 100000) return '#90ee90';
-            if (rng < 1000000) return '#9370db';
-            if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
-            if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
-            if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
-            if (rng < 10000000000) return 'linear-gradient(25deg, #4ef542, #ffffff)';
-            return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
-        }
+    if (rankName === 'solar') return 'orange';
+    if (rng < 1000) return '#aad7e6';
+    if (rng < 10000) return '#ffc0cb';
+    if (rng < 100000) return '#90ee90';
+    if (rng < 1000000) return '#9370db';
+    if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
+    if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
+    if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
+    if (rng < 10000000000) return 'linear-gradient(25deg, #4ef542, #ffffff)';
+    if (rng < 100000000000) return 'linear-gradient(45deg, #ff00ff, #00ffff, #ffffff)';
+    if (rng < 1000000000000) return 'linear-gradient(135deg, #ff0000, #ff9900, #ffff00, #ffffff)';
+    if (rng < 10000000000000) return 'linear-gradient(90deg, #0000ff, #00ff00, #ffff00, #ffffff)';
+    if (rng < 100000000000000) return 'linear-gradient(120deg, #8b00ff, #ff00ff, #00ffff, #ffffff)';
+    if (rng < 1000000000000000) return 'linear-gradient(180deg, #ff0000, #000000, #00ff00, #ffffff)';
+    if (rng < 10000000000000000) return 'linear-gradient(225deg, #00ffff, #000000, #ffff00, #ffffff)';
+    if (rng < 100000000000000000) return 'linear-gradient(270deg, #ff0000, #00ff00, #0000ff, #ffffff)';
+    return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
+}
 
         function calculateRNG() {
             const luck = luckLevel * 0.5 + getTotalEnchantLuck();
