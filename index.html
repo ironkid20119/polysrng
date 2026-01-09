@@ -597,7 +597,9 @@
             { name: 'eternal', min: 50000, max: 100000 },
             { name: 'iridescence', min: 100000, max: 500000 },
             { name: 'zeta', min: 500000, max: 1000000 },
-            { name: 'fantasy', min: 1000000, max: Infinity }
+            { name: 'fantasy', min: 1000000, max: 2015510 },
+            { name: 'giant', min: 2015510, max: 5000000 },
+            { name: 'ultimate', min: 5000000, max: Infinity }
         ];
 
         const SECRETS = [
@@ -699,6 +701,7 @@
             if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
             if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
             if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
+            if (rng < 10000000000) return 'linear-gradient(25eg, #4ef542, #ffffff)';
             return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
         }
 
