@@ -199,6 +199,7 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 3px;
+            position: relative;
         }
         .enchant-tag {
             background: #9370db;
@@ -207,6 +208,13 @@
             border-radius: 3px;
             font-size: 11px;
             text-transform: lowercase;
+        }
+        .star-indicator {
+            position: absolute;
+            top: -8px;
+            right: 5px;
+            font-size: 10px;
+            color: gold;
         }
         .accept-btn {
             background: #ff69b4;
@@ -361,6 +369,8 @@
             background: #f9f9f9;
             padding: 15px;
             border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 10px;
         }
         .index-title {
             font-weight: bold;
@@ -369,6 +379,26 @@
             border-bottom: 2px solid #ff69b4;
             padding-bottom: 5px;
             text-transform: lowercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .index-title::after {
+            content: '▼';
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        .index-title.collapsed::after {
+            transform: rotate(-90deg);
+        }
+        .index-items {
+            max-height: 200px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease;
+        }
+        .index-items.collapsed {
+            max-height: 0;
+            overflow: hidden;
         }
         .index-item {
             margin-bottom: 5px;
@@ -420,6 +450,58 @@
         .star-display {
             font-size: 16px;
             margin-bottom: 3px;
+            color: gold;
+        }
+        .merge-section {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .merge-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .merge-select {
+            padding: 5px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+        .merge-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .locked-enchant {
+            opacity: 0.7;
+            position: relative;
+        }
+        .locked-enchant::after {
+            content: '🔒';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 8px;
+        }
+        .autoroll-controls {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .autorow-toggle {
+            background: #4CAF50;
+            color: white;
+        }
+        .autorow-toggle.paused {
+            background: #ff9800;
+        }
+        .autorow-toggle.stopped {
+            background: #f44336;
         }
     </style>
 </head>
@@ -445,6 +527,18 @@
             <div class="stat-box">
                 <div class="stat-label">enchants</div>
                 <div class="stat-value" id="enchants">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">roll coins</div>
+                <div class="stat-value" id="rollCoins">0</div>
+            </div>
+        </div>
+
+        <div class="autoroll-controls">
+            <button class="autorow-toggle" id="autorollBtn" onclick="toggleAutoroll()">▶️ Start Autoroll</button>
+            <div style="margin-top: 10px;">
+                <label style="font-size: 14px; color: #666;">Pause on orb with stars ≥ </label>
+                <input type="number" id="pauseStars" value="0" min="0" max="5" style="width: 60px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
             </div>
         </div>
 
@@ -531,6 +625,22 @@
                         <div class="inventory" id="inventoryList"></div>
                     </div>
                 </div>
+
+                <div class="merge-section">
+                    <div class="inventory-title">🔄 Enchant Merging</div>
+                    <div class="merge-controls">
+                        <select id="mergeOrb1" class="merge-select" onchange="updateMergePreview()">
+                            <option value="-1">Select first orb</option>
+                        </select>
+                        <select id="mergeOrb2" class="merge-select" onchange="updateMergePreview()">
+                            <option value="-1">Select second orb</option>
+                        </select>
+                        <button onclick="mergeEnchants()" id="mergeBtn" disabled>Merge (500 roll coins)</button>
+                    </div>
+                    <div class="merge-info" id="mergePreview">
+                        Select two orbs to merge. Both enchants will be locked after merging.
+                    </div>
+                </div>
             </div>
 
             <div class="right-column">
@@ -552,21 +662,21 @@
                     </div>
                     <div class="index-content" id="indexContent">
                         <div class="index-grid">
-                            <div class="index-category">
+                            <div class="index-category" onclick="toggleIndexCategory('variantsIndex')">
                                 <div class="index-title">variants</div>
-                                <div id="variantsIndex"></div>
+                                <div class="index-items" id="variantsIndexItems"></div>
                             </div>
-                            <div class="index-category">
-                                <div class="index-title">ranks</div>
-                                <div id="ranksIndex"></div>
+                            <div class="index-category" onclick="toggleIndexCategory('normalRanksIndex')">
+                                <div class="index-title">normal ranks</div>
+                                <div class="index-items" id="normalRanksIndexItems"></div>
                             </div>
-                            <div class="index-category">
-                                <div class="index-title">secrets</div>
-                                <div id="secretsIndex"></div>
+                            <div class="index-category" onclick="toggleIndexCategory('secretRanksIndex')">
+                                <div class="index-title">secret ranks</div>
+                                <div class="index-items" id="secretRanksIndexItems"></div>
                             </div>
-                            <div class="index-category">
+                            <div class="index-category" onclick="toggleIndexCategory('enchantsIndex')">
                                 <div class="index-title">enchants</div>
-                                <div id="enchantsIndex"></div>
+                                <div class="index-items" id="enchantsIndexItems"></div>
                             </div>
                         </div>
                     </div>
@@ -638,13 +748,18 @@
             { name: 'addition ii', type: 'addition', value: 2, color: '#ff8800', chance: 1/75, priority: 2 },
             { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/5000, priority: 3 },
             { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60, priority: 1 },
-            { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 }
+            { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 },
+            { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
+            { name: 'weird i', type: 'weird', value: 1.2, color: '#ff00ff', chance: 1/500, priority: 1 },
+            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
+            { name: 'unusual', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 }
         ];
 
         // game state
         let polycoin = 0;
         let bestRoll = 0;
         let totalRolls = 0;
+        let rollCoins = 0;
         let bulkLevel = 1;
         let bulkCost = 100;
         let luckLevel = 0;
@@ -660,6 +775,8 @@
         let variantLuckLevel = 0;
         let variantLuckCost = 50;
         let isRolling = false;
+        let isAutorolling = false;
+        let autorollInterval = null;
         let inventory = [];
         let enchantOrbs = [];
         let equippedOrb = null;
@@ -672,6 +789,7 @@
         };
         let cooldownThreshold = 0;
         let cooldownTime = 3;
+        let pauseStarsThreshold = 0;
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -694,6 +812,37 @@
             const content = document.getElementById(sectionId);
             if (content) {
                 content.classList.toggle('open');
+            }
+        }
+
+        function toggleIndexCategory(categoryId) {
+            const title = document.querySelector(`[onclick*="${categoryId}"] .index-title`);
+            const items = document.getElementById(categoryId + 'Items');
+            if (title && items) {
+                title.classList.toggle('collapsed');
+                items.classList.toggle('collapsed');
+            }
+        }
+
+        function toggleAutoroll() {
+            const btn = document.getElementById('autorollBtn');
+            if (isAutorolling) {
+                clearInterval(autorollInterval);
+                isAutorolling = false;
+                btn.textContent = '▶️ Start Autoroll';
+                btn.classList.remove('paused');
+                btn.classList.add('stopped');
+            } else {
+                isAutorolling = true;
+                btn.textContent = '⏸️ Pause Autoroll';
+                btn.classList.remove('stopped');
+                btn.classList.add('paused');
+                
+                autorollInterval = setInterval(() => {
+                    if (!isRolling) {
+                        roll();
+                    }
+                }, 100);
             }
         }
 
@@ -728,6 +877,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'luck') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'alpha') total += applyStarBonus(0.25, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(10, stars);
@@ -748,6 +898,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'secret') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'alpha') total += applyStarBonus(0.5, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(25, stars);
@@ -766,6 +917,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'speed') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars); // Negative for faster
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.25, stars);
                     else if (enchant.value === 2) total += applyStarBonus(0.5, stars);
@@ -786,6 +938,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'variant') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'alpha') total += applyStarBonus(0.125, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(2.5, stars);
@@ -797,8 +950,22 @@
             return total;
         }
 
+        function getTotalEnchantLuckBonus() {
+            let total = enchantLuckLevel * 0.05;
+            if (!equippedOrb) return total;
+            
+            const stars = equippedOrb.stars || 0;
+            
+            equippedOrb.enchants.forEach(enchant => {
+                if (enchant.type === 'weird') total += applyStarBonus(enchant.value, stars);
+            });
+            
+            return total;
+        }
+
         function getTotalBulkRolls() {
-            let total = bulkLevel;
+            let total = Math.min(bulkLevel, 3); // Base rollers capped at 3
+            
             if (!equippedOrb) return total;
             
             equippedOrb.enchants.forEach(enchant => {
@@ -812,7 +979,7 @@
                 }
             });
             
-            return Math.min(total, 3);
+            return total;
         }
 
         function getRank(rng) {
@@ -848,13 +1015,41 @@
             return null;
         }
 
+        function shouldOverrideEnchant(enchantName) {
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            return !overrideExceptions.includes(enchantName.toLowerCase());
+        }
+
         function generateEnchants(baseRng) {
             if (baseRng < 500) return [];
             
             const generated = {};
-            const enchantLuck = enchantLuckLevel * 0.05;
+            const enchantLuck = getTotalEnchantLuckBonus();
             
+            // Check for alpha first (special handling)
+            const alphaChance = ENCHANT_TYPES.find(e => e.name === 'alpha').chance * (1 + enchantLuck);
+            let hasAlpha = false;
+            if (Math.random() <= alphaChance) {
+                hasAlpha = true;
+                const alphaEnchant = ENCHANT_TYPES.find(e => e.name === 'alpha');
+                generated['alpha'] = {
+                    name: alphaEnchant.name,
+                    type: alphaEnchant.type,
+                    value: alphaEnchant.value,
+                    color: alphaEnchant.color,
+                    priority: alphaEnchant.priority
+                };
+            }
+            
+            // Generate other enchants (skip if alpha overrides them)
             ENCHANT_TYPES.forEach(enchant => {
+                if (enchant.name === 'alpha') return; // Already handled
+                
+                // Skip if alpha should override this enchant
+                if (hasAlpha && shouldOverrideEnchant(enchant.name)) {
+                    return;
+                }
+                
                 const adjustedChance = enchant.chance * (1 + enchantLuck);
                 if (Math.random() <= adjustedChance) {
                     // If we already have this type, keep the one with higher priority (better enchant)
@@ -910,7 +1105,9 @@
                         <div class="roll-result">press roll!</div>
                         <div class="roll-name"></div>
                     </div>
-                    <div class="enchants-box"></div>
+                    <div class="enchants-box">
+                        <div class="star-indicator" style="display: none;"></div>
+                    </div>
                     <div class="roll-actions" style="display: none;">
                         <button class="accept-btn" onclick="acceptRoll(${i})">✓ accept</button>
                         <button class="decline-btn" onclick="declineRoll(${i})">✗ decline</button>
@@ -932,7 +1129,7 @@
             resultEl.classList.add('flipping');
             variantBox.textContent = '';
             nameEl.textContent = '';
-            enchantsBox.innerHTML = '';
+            enchantsBox.innerHTML = '<div class="star-indicator" style="display: none;"></div>';
             
             resultEl.innerHTML = '';
             
@@ -960,7 +1157,7 @@
             updateAnimation();
         }
 
-        function displayRoll(index, baseRng, finalRng, rankName, variantName, generatedEnchants) {
+        function displayRoll(index, baseRng, finalRng, rankName, variantName, generatedEnchants, stars) {
             const roller = document.getElementById(`roller-${index}`);
             if (!roller) return;
             
@@ -968,6 +1165,7 @@
             const variantBox = roller.querySelector('.variant-box');
             const nameEl = roller.querySelector('.roll-name');
             const enchantsBox = roller.querySelector('.enchants-box');
+            const starIndicator = enchantsBox.querySelector('.star-indicator');
             const actionElements = roller.querySelector('.roll-actions');
             
             resultEl.classList.remove('flipping');
@@ -976,12 +1174,31 @@
             variantBox.textContent = variantName;
             nameEl.textContent = rankName;
             
+            // Show stars if present
+            if (stars && stars > 0) {
+                starIndicator.textContent = '⭐'.repeat(stars);
+                starIndicator.style.display = 'block';
+                
+                // Check if we should pause autoroll
+                pauseStarsThreshold = parseInt(document.getElementById('pauseStars').value) || 0;
+                if (isAutorolling && stars >= pauseStarsThreshold && pauseStarsThreshold > 0) {
+                    toggleAutoroll(); // Pause autoroll
+                    alert(`Autoroll paused! Found orb with ${stars} stars.`);
+                }
+            } else {
+                starIndicator.style.display = 'none';
+            }
+            
             if (generatedEnchants && generatedEnchants.length > 0) {
                 enchantsBox.innerHTML = generatedEnchants.map(enchant => 
                     `<span class="enchant-tag" style="background: ${enchant.color}">${enchant.name}</span>`
                 ).join('');
+                enchantsBox.appendChild(starIndicator);
             } else {
                 enchantsBox.innerHTML = '';
+                if (stars && stars > 0) {
+                    enchantsBox.appendChild(starIndicator);
+                }
             }
             
             actionElements.style.display = 'flex';
@@ -1012,13 +1229,14 @@
             
             // Create enchant orb if there are enchants
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
-                const stars = generateStars();
+                const stars = pendingRolls[index].stars || generateStars();
                 const orb = {
                     id: Date.now() + Math.random(),
                     enchants: pendingRolls[index].enchants,
                     sourceRNG: pendingRolls[index].finalRng,
                     variant: pendingRolls[index].variant,
-                    stars: stars
+                    stars: stars,
+                    locked: false
                 };
                 enchantOrbs.push(orb);
             }
@@ -1033,6 +1251,7 @@
             
             updateInventory();
             updateEnchantInventory();
+            updateMergeSelects();
             updateUI();
             saveGame();
         }
@@ -1062,6 +1281,7 @@
             }
             enchantOrbs.splice(index, 1);
             updateEnchantInventory();
+            updateMergeSelects();
             updateUI();
             updateRollers();
             saveGame();
@@ -1118,6 +1338,7 @@
                     
                     const gain = Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
+                    rollCoins += 1; // Add roll coin
                     totalRolls++;
                     
                     if (finalRng > bestRoll) {
@@ -1127,7 +1348,8 @@
                     const generatedEnchants = generateEnchants(baseRng);
                     generatedEnchants.forEach(e => discovered.enchants.add(e.name));
                     
-                    displayRoll(i, baseRng, finalRng, rankName, variant.name, generatedEnchants);
+                    const stars = generateStars();
+                    displayRoll(i, baseRng, finalRng, rankName, variant.name, generatedEnchants, stars);
                     
                     pendingRolls[i] = {
                         baseRng: baseRng,
@@ -1135,6 +1357,7 @@
                         rank: rankName,
                         variant: variant.name,
                         enchants: generatedEnchants,
+                        stars: stars,
                         timestamp: Date.now()
                     };
                 }
@@ -1231,11 +1454,16 @@
                     ? `<div style="font-size: 12px; color: #666;">+${item.enchants.length} enchants</div>`
                     : '';
                 
+                const starsHTML = item.stars && item.stars > 0 
+                    ? `<div style="font-size: 11px; color: gold;">${'⭐'.repeat(item.stars)}</div>`
+                    : '';
+                
                 return `
                     <div class="inventory-item">
                         <div>
                             <span class="inventory-rng" style="${style}">${item.finalRng.toFixed(2)}</span>
                             <div class="inventory-details">${item.rank} - ${item.variant} (x${Math.round(item.finalRng/item.baseRng)})</div>
+                            ${starsHTML}
                             ${enchantsHTML}
                         </div>
                         <button class="decline-btn" onclick="deleteInventoryItem(${index})" style="padding: 5px 15px; font-size: 12px;">delete</button>
@@ -1298,6 +1526,17 @@
                 const variant = applyStarBonus(5, stars);
                 return `+3 bulk roll, +${luck.toFixed(1)} luck, -${speed.toFixed(2)}s speed, +${variant.toFixed(1)} variant${starBonus}`;
             }
+            if (enchant.type === 'alpha') {
+                const luck = applyStarBonus(0.25, stars);
+                const speed = applyStarBonus(0.05, stars);
+                const secret = applyStarBonus(0.5, stars);
+                const variant = applyStarBonus(0.125, stars);
+                return `+${luck.toFixed(2)} luck, -${speed.toFixed(2)}s speed, +${secret.toFixed(2)} secret, +${variant.toFixed(3)} variant${starBonus}`;
+            }
+            if (enchant.type === 'weird') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(2)} enchant luck${starBonus}`;
+            }
             return '';
         }
 
@@ -1330,7 +1569,7 @@
                 const effectsList = equippedOrb.enchants.map(e => getEnchantDescription(e, equippedOrb.stars)).join(' | ');
                 
                 equippedList.innerHTML = `
-                    <div class="inventory-item">
+                    <div class="inventory-item ${equippedOrb.locked ? 'locked-enchant' : ''}">
                         <div>
                             ${starDisplay ? `<div class="star-display">${starDisplay}</div>` : ''}
                             <div style="margin-bottom: 5px;">${enchantsList}</div>
@@ -1359,7 +1598,7 @@
                 const isEquipped = equippedOrb && equippedOrb.id === orb.id;
                 
                 return `
-                    <div class="inventory-item">
+                    <div class="inventory-item ${orb.locked ? 'locked-enchant' : ''}">
                         <div>
                             ${starDisplay ? `<div class="star-display">${starDisplay}</div>` : ''}
                             <div style="margin-bottom: 5px;">${enchantsList}</div>
@@ -1369,13 +1608,174 @@
                         <div>
                             ${isEquipped ? 
                                 '<span style="color: #90ee90; font-size: 12px;">equipped</span>' : 
-                                `<button class="equip-btn" onclick="equipEnchantOrb(${index})" style="padding: 5px 10px; font-size: 11px;">equip</button>`
+                                `<button class="equip-btn" onclick="equipEnchantOrb(${index})" style="padding: 5px 10px; font-size: 11px;" ${orb.locked ? 'disabled' : ''}>equip</button>`
                             }
                             <button class="decline-btn" onclick="deleteEnchantOrb(${index})" style="padding: 5px 10px; font-size: 11px;">delete</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function updateMergeSelects() {
+            const select1 = document.getElementById('mergeOrb1');
+            const select2 = document.getElementById('mergeOrb2');
+            
+            select1.innerHTML = '<option value="-1">Select first orb</option>';
+            select2.innerHTML = '<option value="-1">Select second orb</option>';
+            
+            enchantOrbs.forEach((orb, index) => {
+                if (!orb.locked) {
+                    const optionText = `Orb ${index + 1}: ${orb.enchants.map(e => e.name).join(', ')} ${orb.stars > 0 ? '⭐'.repeat(orb.stars) : ''}`;
+                    select1.innerHTML += `<option value="${index}">${optionText}</option>`;
+                    select2.innerHTML += `<option value="${index}">${optionText}</option>`;
+                }
+            });
+            
+            updateMergePreview();
+        }
+
+        function updateMergePreview() {
+            const orb1Index = parseInt(document.getElementById('mergeOrb1').value);
+            const orb2Index = parseInt(document.getElementById('mergeOrb2').value);
+            const mergeBtn = document.getElementById('mergeBtn');
+            const preview = document.getElementById('mergePreview');
+            
+            if (orb1Index === -1 || orb2Index === -1 || orb1Index === orb2Index) {
+                mergeBtn.disabled = true;
+                preview.textContent = 'Select two different orbs to merge.';
+                return;
+            }
+            
+            const orb1 = enchantOrbs[orb1Index];
+            const orb2 = enchantOrbs[orb2Index];
+            
+            if (orb1.locked || orb2.locked) {
+                mergeBtn.disabled = true;
+                preview.textContent = 'Cannot merge locked orbs.';
+                return;
+            }
+            
+            if (rollCoins < 500) {
+                mergeBtn.disabled = true;
+                preview.textContent = `Need 500 roll coins to merge (you have ${rollCoins}).`;
+                return;
+            }
+            
+            mergeBtn.disabled = false;
+            
+            // Count alphas
+            const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
+            const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
+            const totalAlphas = alphaCount1 + alphaCount2;
+            
+            // Combine enchants
+            const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
+            
+            // Handle alpha stacking
+            const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
+            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
+            
+            // Remove overridden enchants (except for exceptions)
+            const finalEnchants = [];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            
+            if (alphaEnchants.length > 0) {
+                // Add all alphas
+                finalEnchants.push(...alphaEnchants);
+                
+                // Add non-overridden enchants
+                otherEnchants.forEach(enchant => {
+                    if (!shouldOverrideEnchant(enchant.name) || overrideExceptions.includes(enchant.name.toLowerCase())) {
+                        finalEnchants.push(enchant);
+                    }
+                });
+            } else {
+                finalEnchants.push(...combinedEnchants);
+            }
+            
+            // Calculate average stars (rounded up)
+            const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
+            
+            preview.innerHTML = `
+                <strong>Merge Preview:</strong><br>
+                Combined enchants: ${finalEnchants.map(e => `<span style="color: ${e.color}">${e.name}</span>`).join(', ')}<br>
+                Stars: ${avgStars > 0 ? '⭐'.repeat(avgStars) : 'None'}<br>
+                Both orbs will be locked after merging.
+            `;
+        }
+
+        function mergeEnchants() {
+            const orb1Index = parseInt(document.getElementById('mergeOrb1').value);
+            const orb2Index = parseInt(document.getElementById('mergeOrb2').value);
+            
+            if (orb1Index === -1 || orb2Index === -1 || orb1Index === orb2Index) return;
+            if (rollCoins < 500) return;
+            
+            const orb1 = enchantOrbs[orb1Index];
+            const orb2 = enchantOrbs[orb2Index];
+            
+            if (orb1.locked || orb2.locked) return;
+            
+            // Deduct roll coins
+            rollCoins -= 500;
+            
+            // Count alphas
+            const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
+            const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
+            
+            // Combine enchants
+            const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
+            
+            // Handle alpha stacking
+            const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
+            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
+            
+            // Remove overridden enchants (except for exceptions)
+            const finalEnchants = [];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            
+            if (alphaEnchants.length > 0) {
+                // Add all alphas
+                finalEnchants.push(...alphaEnchants);
+                
+                // Add non-overridden enchants
+                otherEnchants.forEach(enchant => {
+                    if (!shouldOverrideEnchant(enchant.name) || overrideExceptions.includes(enchant.name.toLowerCase())) {
+                        finalEnchants.push(enchant);
+                    }
+                });
+            } else {
+                finalEnchants.push(...combinedEnchants);
+            }
+            
+            // Calculate average stars (rounded up)
+            const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
+            
+            // Create new merged orb
+            const mergedOrb = {
+                id: Date.now() + Math.random(),
+                enchants: finalEnchants,
+                sourceRNG: Math.max(orb1.sourceRNG || 0, orb2.sourceRNG || 0),
+                variant: orb1.sourceRNG >= orb2.sourceRNG ? orb1.variant : orb2.variant,
+                stars: avgStars,
+                locked: false
+            };
+            
+            // Lock the original orbs
+            orb1.locked = true;
+            orb2.locked = true;
+            
+            // Add the new orb
+            enchantOrbs.push(mergedOrb);
+            
+            // Update displays
+            updateEnchantInventory();
+            updateMergeSelects();
+            updateUI();
+            saveGame();
+            
+            alert('Enchants merged successfully! Original orbs are now locked.');
         }
 
         function updateIndex() {
@@ -1386,25 +1786,25 @@
                 const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${v.name}: ${v.multipliesRNG}x (1/${v.chance})</div>`;
             }).join('');
-            document.getElementById('variantsIndex').innerHTML = variantsHTML;
+            document.getElementById('variantsIndexItems').innerHTML = variantsHTML;
             
-            // ranks index
-            const ranksHTML = RANKS.map(r => {
-                const isDiscovered = discovered.ranks.has(r.name);
+            // normal ranks index
+            const normalRanksHTML = RANKS.map(r => {
+                const isDiscovered = discovered.ranks.has(r.name) && !SECRETS.some(s => s.name === r.name);
                 const icon = isDiscovered ? '✓' : '✗';
                 const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${r.name}: ${r.min} - ${r.max === Infinity ? '∞' : r.max}</div>`;
             }).join('');
-            document.getElementById('ranksIndex').innerHTML = ranksHTML;
+            document.getElementById('normalRanksIndexItems').innerHTML = normalRanksHTML;
             
-            // secrets index
+            // secret ranks index
             const secretsHTML = SECRETS.map(s => {
                 const isDiscovered = discovered.secrets.has(s.name);
                 const icon = isDiscovered ? '✓' : '✗';
                 const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${s.chance}</div>`;
             }).join('');
-            document.getElementById('secretsIndex').innerHTML = secretsHTML;
+            document.getElementById('secretRanksIndexItems').innerHTML = secretsHTML;
             
             // enchants index
             const enchantsHTML = ENCHANT_TYPES.map(enchant => {
@@ -1417,6 +1817,8 @@
                 if (enchant.type === 'secret') effect = `+${enchant.value} secret`;
                 if (enchant.type === 'variant') effect = `+${enchant.value} variant luck`;
                 if (enchant.type === 'addition') effect = `+${enchant.value} bulk roll`;
+                if (enchant.type === 'alpha') effect = `+0.25 luck, -0.05s speed, +0.5 secret, +0.125 variant`;
+                if (enchant.type === 'weird') effect = `+${enchant.value} enchant luck`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant, +1 bulk';
                     else if (enchant.value === 2) effect = '+10 luck, +0.5s speed, +25 secret, +2.5 variant, +2 bulk';
@@ -1427,7 +1829,7 @@
                 const chanceDisplay = Math.round(1/enchant.chance);
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${enchant.name}: ${effect} (1/${chanceDisplay})</div>`;
             }).join('');
-            document.getElementById('enchantsIndex').innerHTML = enchantsHTML;
+            document.getElementById('enchantsIndexItems').innerHTML = enchantsHTML;
         }
 
         function calculateInvCost() {
@@ -1439,6 +1841,7 @@
             document.getElementById('polycoin').textContent = Math.floor(polycoin).toLocaleString();
             document.getElementById('best').textContent = bestRoll.toFixed(2);
             document.getElementById('rolls').textContent = totalRolls.toLocaleString();
+            document.getElementById('rollCoins').textContent = rollCoins.toLocaleString();
             
             document.getElementById('bulkLevel').textContent = bulkLevel;
             document.getElementById('bulkCost').textContent = bulkCost.toLocaleString();
@@ -1482,6 +1885,7 @@
                     polycoin,
                     bestRoll,
                     totalRolls,
+                    rollCoins,
                     bulkLevel,
                     bulkCost,
                     luckLevel,
@@ -1497,6 +1901,7 @@
                     variantLuckCost,
                     cooldownThreshold,
                     cooldownTime,
+                    isAutorolling,
                     discovered: {
                         variants: Array.from(discovered.variants),
                         ranks: Array.from(discovered.ranks),
@@ -1524,7 +1929,8 @@
                         })),
                         sourceRNG: orb.sourceRNG,
                         variant: orb.variant,
-                        stars: orb.stars || 0
+                        stars: orb.stars || 0,
+                        locked: orb.locked || false
                     })),
                     equippedOrb: equippedOrb ? {
                         id: equippedOrb.id,
@@ -1537,7 +1943,8 @@
                         })),
                         sourceRNG: equippedOrb.sourceRNG,
                         variant: equippedOrb.variant,
-                        stars: equippedOrb.stars || 0
+                        stars: equippedOrb.stars || 0,
+                        locked: equippedOrb.locked || false
                     } : null
                 };
                 localStorage.setItem('polys-rng-save', JSON.stringify(saveData));
@@ -1555,6 +1962,7 @@
                     polycoin = saveData.polycoin || 0;
                     bestRoll = saveData.bestRoll || 0;
                     totalRolls = saveData.totalRolls || 0;
+                    rollCoins = saveData.rollCoins || 0;
                     bulkLevel = saveData.bulkLevel || 1;
                     bulkCost = saveData.bulkCost || 100;
                     luckLevel = saveData.luckLevel || 0;
@@ -1589,11 +1997,13 @@
                     enchantOrbs = saveData.enchantOrbs || [];
                     enchantOrbs.forEach(orb => {
                         if (orb.stars === undefined) orb.stars = 0;
+                        if (orb.locked === undefined) orb.locked = false;
                     });
                     
                     equippedOrb = saveData.equippedOrb || null;
-                    if (equippedOrb && equippedOrb.stars === undefined) {
-                        equippedOrb.stars = 0;
+                    if (equippedOrb) {
+                        if (equippedOrb.stars === undefined) equippedOrb.stars = 0;
+                        if (equippedOrb.locked === undefined) equippedOrb.locked = false;
                     }
                 }
             } catch (error) {
@@ -1604,6 +2014,7 @@
             updateRollers();
             updateInventory();
             updateEnchantInventory();
+            updateMergeSelects();
             updateIndex();
             updateUI();
         }
@@ -1612,10 +2023,19 @@
         updateRollers();
         updateUI();
         updateIndex();
+        updateMergeSelects();
         
         // Make inventory and enchant sections open by default
         document.getElementById('inventoryContent').classList.add('open');
         document.getElementById('enchantsContent').classList.add('open');
+        
+        // Initialize index sections as collapsed
+        document.querySelectorAll('.index-items').forEach(el => {
+            el.classList.add('collapsed');
+        });
+        document.querySelectorAll('.index-title').forEach(el => {
+            el.classList.add('collapsed');
+        });
     </script>
 </body>
 </html>
