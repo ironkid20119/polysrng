@@ -32,6 +32,15 @@
             color: #ccc;
         }
         
+        body.dark-mode .cooldown-settings {
+            background: #333;
+            color: #fff;
+        }
+        
+        body.dark-mode .cooldown-settings label {
+            color: #ccc;
+        }
+        
         body.dark-mode .roll-display {
             background: #222;
             border-color: #ff69b4;
@@ -68,6 +77,12 @@
         
         body.dark-mode button:hover {
             background: #777;
+        }
+        
+        body.dark-mode input {
+            background: #444;
+            color: #fff;
+            border-color: #666;
         }
         
         .dark-mode-toggle {
@@ -429,6 +444,21 @@
             </div>
         </div>
 
+        <div class="cooldown-settings" style="text-align: center; margin-bottom: 20px; background: #f0f0f0; padding: 15px; border-radius: 10px;">
+            <div style="display: inline-block; margin: 0 15px;">
+                <label style="font-size: 14px; color: #666;">cooldown if RNG ≥ </label>
+                <input type="number" id="cooldownThreshold" value="0" min="0" step="1000" 
+                    onchange="updateCooldownSettings()" 
+                    style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
+            </div>
+            <div style="display: inline-block; margin: 0 15px;">
+                <label style="font-size: 14px; color: #666;">cooldown time (s): </label>
+                <input type="number" id="cooldownTime" value="3" min="0.5" max="60" step="0.5" 
+                    onchange="updateCooldownSettings()" 
+                    style="width: 80px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
+            </div>
+        </div>
+
         <div class="rollers-container" id="rollersContainer">
             <!-- rollers will be generated here -->
         </div>
@@ -598,6 +628,9 @@
             { name: 'variant i', type: 'variant', value: 0.5, color: '#ffc0cb', chance: 1/25, priority: 1 },
             { name: 'variant ii', type: 'variant', value: 2.5, color: '#ff69b4', chance: 1/100, priority: 2 },
             { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/33333, priority: 3 },
+            { name: 'addition i', type: 'addition', value: 1, color: '#ffaa00', chance: 1/25, priority: 1 },
+            { name: 'addition ii', type: 'addition', value: 2, color: '#ff8800', chance: 1/75, priority: 2 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/5000, priority: 3 },
             { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60, priority: 1 },
             { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 }
         ];
@@ -625,6 +658,14 @@
         let enchantOrbs = []; // Changed to orbs
         let equippedOrb = null; // Changed to single orb
         let pendingRolls = {};
+        let discovered = {
+            variants: new Set(),
+            ranks: new Set(),
+            secrets: new Set(),
+            enchants: new Set()
+        };
+        let cooldownThreshold = 0;
+        let cooldownTime = 3;
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -1005,16 +1046,25 @@
             
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
-            const rollSpeed = Math.max(0.5, baseSpeed - speedReduction);
+            const rollSpeed = Math.max(0.05, baseSpeed - speedReduction);
             
             setTimeout(() => {
+                let maxRoll = 0;
+                
                 for (let i = 0; i < totalRollers; i++) {
                     const baseRng = calculateRNG();
                     const variant = getVariant();
                     const finalRng = baseRng * variant.multipliesRNG;
                     
+                    if (finalRng > maxRoll) maxRoll = finalRng;
+                    
                     const secret = checkSecret();
                     const rankName = secret || getRank(baseRng);
+                    
+                    // Track discoveries
+                    discovered.variants.add(variant.name);
+                    discovered.ranks.add(rankName);
+                    if (secret) discovered.secrets.add(secret);
                     
                     const gain = Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
@@ -1025,6 +1075,7 @@
                     }
                     
                     const generatedEnchants = generateEnchants(baseRng);
+                    generatedEnchants.forEach(e => discovered.enchants.add(e.name));
                     
                     displayRoll(i, baseRng, finalRng, rankName, variant.name, generatedEnchants);
                     
@@ -1039,9 +1090,29 @@
                 }
                 
                 updateUI();
+                updateIndex();
                 saveGame();
                 isRolling = false;
-                document.getElementById('rollBtn').disabled = false;
+                
+                // Apply cooldown if threshold is met
+                if (cooldownThreshold > 0 && maxRoll >= cooldownThreshold) {
+                    let countdown = cooldownTime;
+                    const rollBtn = document.getElementById('rollBtn');
+                    rollBtn.textContent = `cooldown: ${countdown.toFixed(1)}s`;
+                    
+                    const interval = setInterval(() => {
+                        countdown -= 0.1;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            rollBtn.textContent = 'roll';
+                            rollBtn.disabled = false;
+                        } else {
+                            rollBtn.textContent = `cooldown: ${countdown.toFixed(1)}s`;
+                        }
+                    }, 100);
+                } else {
+                    document.getElementById('rollBtn').disabled = false;
+                }
             }, rollSpeed * 1000);
         }
 
@@ -1128,6 +1199,7 @@
             if (enchant.type === 'speed') return `+${enchant.value}s speed`;
             if (enchant.type === 'secret') return `+${enchant.value} secret`;
             if (enchant.type === 'variant') return `+${enchant.value} variant luck`;
+            if (enchant.type === 'addition') return `+${enchant.value} bulk roll`;
             if (enchant.type === 'requiem') {
                 if (enchant.value === 1) return '+5 luck, +0.25s speed, +5 secret, +0.5 variant';
                 if (enchant.value === 2) return '+10 luck, +0.5s speed, +25 secret, +2.5 variant';
@@ -1136,6 +1208,12 @@
             if (enchant.type === 'greed') return '+2 bulk roll, -20 luck, -0.7s speed';
             if (enchant.type === 'patience') return '+3 bulk roll, +100 luck, -25s speed, +5 variant';
             return '';
+        }
+
+        function updateCooldownSettings() {
+            cooldownThreshold = parseFloat(document.getElementById('cooldownThreshold').value) || 0;
+            cooldownTime = parseFloat(document.getElementById('cooldownTime').value) || 3;
+            saveGame();
         }
 
         function updateEnchantInventory() {
@@ -1202,30 +1280,43 @@
 
         function updateIndex() {
             // variants index
-            const variantsHTML = VARIANTS.map(v => 
-                `<div class="index-item">${v.name}: ${v.multipliesRNG}x (1/${v.chance})</div>`
-            ).join('');
+            const variantsHTML = VARIANTS.map(v => {
+                const isDiscovered = discovered.variants.has(v.name);
+                const icon = isDiscovered ? '✓' : '✗';
+                const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
+                return `<div class="index-item"><span style="${style}">${icon}</span> ${v.name}: ${v.multipliesRNG}x (1/${v.chance})</div>`;
+            }).join('');
             document.getElementById('variantsIndex').innerHTML = variantsHTML;
             
             // ranks index
-            const ranksHTML = RANKS.map(r => 
-                `<div class="index-item">${r.name}: ${r.min} - ${r.max === Infinity ? '∞' : r.max}</div>`
-            ).join('');
+            const ranksHTML = RANKS.map(r => {
+                const isDiscovered = discovered.ranks.has(r.name);
+                const icon = isDiscovered ? '✓' : '✗';
+                const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
+                return `<div class="index-item"><span style="${style}">${icon}</span> ${r.name}: ${r.min} - ${r.max === Infinity ? '∞' : r.max}</div>`;
+            }).join('');
             document.getElementById('ranksIndex').innerHTML = ranksHTML;
             
             // secrets index
-            const secretsHTML = SECRETS.map(s => 
-                `<div class="index-item">${s.name}: 1/${s.chance}</div>`
-            ).join('');
+            const secretsHTML = SECRETS.map(s => {
+                const isDiscovered = discovered.secrets.has(s.name);
+                const icon = isDiscovered ? '✓' : '✗';
+                const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
+                return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${s.chance}</div>`;
+            }).join('');
             document.getElementById('secretsIndex').innerHTML = secretsHTML;
             
             // enchants index
             const enchantsHTML = ENCHANT_TYPES.map(enchant => {
+                const isDiscovered = discovered.enchants.has(enchant.name);
+                const icon = isDiscovered ? '✓' : '✗';
+                const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
                 let effect = '';
                 if (enchant.type === 'luck') effect = `+${enchant.value} luck`;
                 if (enchant.type === 'speed') effect = `+${enchant.value}s speed`;
                 if (enchant.type === 'secret') effect = `+${enchant.value} secret`;
                 if (enchant.type === 'variant') effect = `+${enchant.value} variant luck`;
+                if (enchant.type === 'addition') effect = `+${enchant.value} bulk roll`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant';
                     else if (enchant.value === 2) effect = '+10 luck, +0.5s speed, +25 secret, +2.5 variant';
@@ -1234,7 +1325,7 @@
                 if (enchant.type === 'greed') effect = '+2 bulk roll, -20 luck, -0.7s speed';
                 if (enchant.type === 'patience') effect = '+3 bulk roll, +100 luck, -25s speed, +5 variant';
                 const chanceDisplay = Math.round(1/enchant.chance);
-                return `<div class="index-item">${enchant.name}: ${effect} (1/${chanceDisplay})</div>`;
+                return `<div class="index-item"><span style="${style}">${icon}</span> ${enchant.name}: ${effect} (1/${chanceDisplay})</div>`;
             }).join('');
             document.getElementById('enchantsIndex').innerHTML = enchantsHTML;
         }
@@ -1265,7 +1356,7 @@
             
             const totalSpeedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
             document.getElementById('speedLevel').textContent = speedLevel;
-            document.getElementById('speedAmount').textContent = Math.max(0.5, 3 - totalSpeedReduction).toFixed(1);
+            document.getElementById('speedAmount').textContent = Math.max(0.05, 3 - totalSpeedReduction).toFixed(2);
             document.getElementById('speedCost').textContent = speedCost.toLocaleString();
             document.getElementById('speedBtn').disabled = speedLevel >= 25 || polycoin < speedCost;
             
@@ -1304,6 +1395,14 @@
                     enchantLuckCost,
                     variantLuckLevel,
                     variantLuckCost,
+                    cooldownThreshold,
+                    cooldownTime,
+                    discovered: {
+                        variants: Array.from(discovered.variants),
+                        ranks: Array.from(discovered.ranks),
+                        secrets: Array.from(discovered.secrets),
+                        enchants: Array.from(discovered.enchants)
+                    },
                     inventory: inventory.map(item => ({
                         ...item,
                         enchants: item.enchants ? item.enchants.map(e => ({
@@ -1367,6 +1466,18 @@
                     enchantLuckCost = saveData.enchantLuckCost || 30;
                     variantLuckLevel = saveData.variantLuckLevel || 0;
                     variantLuckCost = saveData.variantLuckCost || 50;
+                    
+                    cooldownThreshold = saveData.cooldownThreshold || 0;
+                    cooldownTime = saveData.cooldownTime || 3;
+                    document.getElementById('cooldownThreshold').value = cooldownThreshold;
+                    document.getElementById('cooldownTime').value = cooldownTime;
+                    
+                    if (saveData.discovered) {
+                        discovered.variants = new Set(saveData.discovered.variants || []);
+                        discovered.ranks = new Set(saveData.discovered.ranks || []);
+                        discovered.secrets = new Set(saveData.discovered.secrets || []);
+                        discovered.enchants = new Set(saveData.discovered.enchants || []);
+                    }
                     
                     inventory = saveData.inventory || [];
                     inventory.forEach(item => {
