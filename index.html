@@ -877,7 +877,7 @@
             { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
             { name: 'weird i', type: 'weird', value: 1.2, color: '#ff00ff', chance: 1/500, priority: 1 },
             { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
-            { name: 'unusual', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 }
+            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 }
         ];
 
         // SPINNER REWARDS
@@ -1191,7 +1191,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
