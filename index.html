@@ -2705,7 +2705,7 @@
                         rollsWithOvertime: equippedOrb.rollsWithOvertime || 0
                     } : null
                 };
-                localStorage.setItem('polys-rng-save', JSON.stringify(saveData));
+                localStorage.setItem('polys-rng-save2', JSON.stringify(saveData));
             } catch (error) {
                 console.error('failed to save game:', error);
             }
@@ -2713,7 +2713,7 @@
 
         function loadGame() {
             try {
-                const result = localStorage.getItem('polys-rng-save');
+                const result = localStorage.getItem('polys-rng-save2');
                 if (result) {
                     const saveData = JSON.parse(result);
                     
