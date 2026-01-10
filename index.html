@@ -349,7 +349,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: border 0.3s;
         }
+        
+        /* Inventory Outline Tiers */
+        .inventory-item.tier-1 { border: 2px solid white; }
+        .inventory-item.tier-2 { border: 2px solid yellow; }
+        .inventory-item.tier-3 { border: 2px solid blue; }
+        .inventory-item.tier-4 { border: 2px solid cyan; }
+        .inventory-item.tier-5 { border: 2px solid orange; }
+        .inventory-item.tier-6 { border: 2px solid pink; }
+        .inventory-item.tier-7 { border: 2px solid lime; }
+        .inventory-item.tier-8 { 
+            border: 2px solid;
+            border-image: linear-gradient(90deg, gray, white, gray) 1;
+            animation: spin-gradient 2s linear infinite;
+        }
+        .inventory-item.tier-9 { 
+            border: 2px solid;
+            border-image: linear-gradient(90deg, #FFFF00, white, #FFFF00) 1;
+            animation: spin-gradient 2s linear infinite;
+        }
+        .inventory-item.tier-10 { 
+            border: 2px solid;
+            border-image: linear-gradient(90deg, purple, violet, purple, violet) 1;
+            animation: spin-gradient 1s linear infinite;
+        }
+        .inventory-item.tier-11 { 
+            border: 2px solid;
+            border-image: linear-gradient(90deg, red, black, red) 1;
+        }
+        
+        @keyframes spin-gradient {
+            0% { border-image-source: linear-gradient(0deg, gray, white, gray); }
+            100% { border-image-source: linear-gradient(360deg, gray, white, gray); }
+        }
+        
         .inventory-rng {
             font-weight: bold;
             font-size: 16px;
@@ -612,6 +647,10 @@
             <div style="margin-top: 10px;">
                 <label style="font-size: 14px; color: #666;">Pause on Secret Rarity ≥ </label>
                 <input type="number" id="pauseSecretRarity" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
+            </div>
+            <div style="margin-top: 10px;">
+                <label style="font-size: 14px; color: #666;">Pause on Enchant Rarity ≥ </label>
+                <input type="number" id="pauseEnchantRarity" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
             </div>
         </div>
 
@@ -877,20 +916,22 @@
             { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
             { name: 'weird i', type: 'weird', value: 1.2, color: '#ff00ff', chance: 1/500, priority: 1 },
             { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
-            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 }
+            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 },
+            { name: 'overtime', type: 'overtime', baseLuck: 0.001, baseSpeed: 0.001, baseVariant: 0.001, baseSecret: 0.001, 
+              currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725, priority: 1 }
         ];
 
-        // SPINNER REWARDS
+        // SPINNER REWARDS - FIXED WITH PROPER WEIGHTS
         const SPINNER_REWARDS = [
-            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/1 },
-            { name: 'speed iii', type: 'speed', value: 0.75, color: '#0066cc', chance: 1/2 },
-            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/4 },
-            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', chance: 1/8 }, // luck ii + speed ii + insight i
-            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/16 },
-            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/32 },
-            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/64 },
-            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/128 },
-            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/50000 }
+            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 128 },
+            { name: 'speed iii', type: 'speed', value: 0.75, color: '#0066cc', weight: 64 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', weight: 32 },
+            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', weight: 16 },
+            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', weight: 8 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', weight: 4 },
+            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', weight: 2 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', weight: 1 },
+            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', weight: 1 }
         ];
 
         // game state
@@ -933,6 +974,8 @@
         let cooldownTime = 3;
         let pauseRNGThreshold = 0;
         let pauseSecretRarityThreshold = 0;
+        let pauseEnchantRarityThreshold = 0;
+        let overtimeRolls = {}; // Track rolls per overtime enchant
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -1010,6 +1053,20 @@
             return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
         }
 
+        function getInventoryTier(finalRng) {
+            if (finalRng >= 1 && finalRng < 1000) return { stars: 1, color: 'white' };
+            if (finalRng < 10000) return { stars: 2, color: 'yellow' };
+            if (finalRng < 100000) return { stars: 3, color: 'blue' };
+            if (finalRng < 1000000) return { stars: 4, color: 'cyan' };
+            if (finalRng < 100000000) return { stars: 5, color: 'orange' };
+            if (finalRng < 1000000000) return { stars: 6, color: 'pink' };
+            if (finalRng < 100000000000) return { stars: 7, color: 'lime' };
+            if (finalRng < 1000000000000) return { stars: 8, color: 'gray-white-gradient' };
+            if (finalRng < 1e15) return { stars: 9, color: 'yellow-white-gradient' }; // 1 trillion to 1 quadrillion
+            if (finalRng < 1e18) return { stars: 10, color: 'purple-violet-gradient' }; // 1 quadrillion to 1 quintillion
+            return { stars: 11, color: 'red-black-gradient' }; // 1 quintillion+
+        }
+
         function calculateRNG() {
             const luck = luckLevel * 0.5 + getTotalEnchantLuck();
             const rng = Math.random() ** (-1.3 - (luck * 0.01));
@@ -1037,6 +1094,7 @@
                 }
                 if (enchant.type === 'greed') total -= applyStarBonus(20, stars);
                 if (enchant.type === 'patience') total += applyStarBonus(100, stars);
+                if (enchant.type === 'overtime') total += applyStarBonus(enchant.currentLuck, stars);
             });
             
             return total;
@@ -1056,6 +1114,7 @@
                     else if (enchant.value === 2) total += applyStarBonus(25, stars);
                     else if (enchant.value === 3) total += applyStarBonus(125, stars);
                 }
+                if (enchant.type === 'overtime') total += applyStarBonus(enchant.currentSecret, stars);
             });
             
             return total;
@@ -1077,6 +1136,7 @@
                 }
                 if (enchant.type === 'greed') total -= applyStarBonus(0.7, stars);
                 if (enchant.type === 'patience') total -= applyStarBonus(25, stars);
+                if (enchant.type === 'overtime') total += applyStarBonus(enchant.currentSpeed, stars);
             });
             
             return total;
@@ -1097,6 +1157,7 @@
                     else if (enchant.value === 3) total += applyStarBonus(20, stars);
                 }
                 if (enchant.type === 'patience') total += applyStarBonus(5, stars);
+                if (enchant.type === 'overtime') total += applyStarBonus(enchant.currentVariant, stars);
             });
             
             return total;
@@ -1168,8 +1229,9 @@
                 }
             }
             
-            // Special handling for solar - 1/100000 chance to replace eclipse
-            if (baseRng >= 250 && baseRng < 500 && random <= 1/100000) {
+            // FIXED: Solar only replaces eclipse (250-500 RNG)
+            const currentRank = getRank(baseRng);
+            if (currentRank === 'eclipse' && random <= 1/100000) {
                 return 'solar';
             }
             
@@ -1179,8 +1241,8 @@
             }
             
             for (let i = SECRETS.length - 1; i >= 0; i--) {
-                // Skip Completionist if we already handled it
-                if (SECRETS[i].name === 'Completionist') continue;
+                // Skip Completionist and solar if we already handled them
+                if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar') continue;
                 
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
@@ -1191,7 +1253,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -1226,7 +1288,23 @@
                 
                 const adjustedChance = enchant.chance * (1 + enchantLuck);
                 if (Math.random() <= adjustedChance) {
-                    if (!generated[enchant.type] || generated[enchant.type].priority < enchant.priority) {
+                    if (enchant.name === 'overtime') {
+                        // Create a deep copy for overtime to track its own stats
+                        generated['overtime'] = {
+                            name: enchant.name,
+                            type: enchant.type,
+                            baseLuck: enchant.baseLuck,
+                            baseSpeed: enchant.baseSpeed,
+                            baseVariant: enchant.baseVariant,
+                            baseSecret: enchant.baseSecret,
+                            currentLuck: enchant.baseLuck,
+                            currentSpeed: enchant.baseSpeed,
+                            currentVariant: enchant.baseVariant,
+                            currentSecret: enchant.baseSecret,
+                            color: enchant.color,
+                            priority: enchant.priority
+                        };
+                    } else if (!generated[enchant.type] || generated[enchant.type].priority < enchant.priority) {
                         generated[enchant.type] = {
                             name: enchant.name,
                             type: enchant.type,
@@ -1390,44 +1468,63 @@
         }
 
         function acceptRoll(index) {
-    if (!pendingRolls[index]) return;
-    
-    const maxSlots = 10 + invLevel;
-    if (inventory.length >= maxSlots) {
-        alert('inventory is full! buy more slots or decline some rolls.');
-        return;
-    }
-    
-    inventory.unshift(pendingRolls[index]);
-    
-    // BUG FIX: Create enchant orb if there are ANY enchants, even without stars
-    if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
-        const stars = pendingRolls[index].stars || 0;
-        const orb = {
-            id: Date.now() + Math.random(),
-            enchants: pendingRolls[index].enchants,
-            sourceRNG: pendingRolls[index].finalRng,
-            variant: pendingRolls[index].variant,
-            stars: stars, // Can be 0!
-            locked: false
-        };
-        enchantOrbs.push(orb);
-    }
-    
-    delete pendingRolls[index];
-    
-    const roller = document.getElementById(`roller-${index}`);
-    if (roller) {
-        const actionElements = roller.querySelector('.roll-actions');
-        actionElements.style.display = 'none';
-    }
-    
-    updateInventory();
-    updateEnchantInventory();
-    updateMergeSelects();
-    updateUI();
-    saveGame();
-}
+            if (!pendingRolls[index]) return;
+            
+            const maxSlots = 10 + invLevel;
+            if (inventory.length >= maxSlots) {
+                alert('inventory is full! buy more slots or decline some rolls.');
+                return;
+            }
+            
+            inventory.unshift(pendingRolls[index]);
+            
+            // Create enchant orb if there are ANY enchants, even without stars
+            if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
+                const stars = pendingRolls[index].stars || 0;
+                const orb = {
+                    id: Date.now() + Math.random(),
+                    enchants: pendingRolls[index].enchants.map(enchant => {
+                        if (enchant.type === 'overtime') {
+                            return {
+                                name: enchant.name,
+                                type: enchant.type,
+                                baseLuck: enchant.baseLuck,
+                                baseSpeed: enchant.baseSpeed,
+                                baseVariant: enchant.baseVariant,
+                                baseSecret: enchant.baseSecret,
+                                currentLuck: enchant.currentLuck,
+                                currentSpeed: enchant.currentSpeed,
+                                currentVariant: enchant.currentVariant,
+                                currentSecret: enchant.currentSecret,
+                                color: enchant.color,
+                                priority: enchant.priority
+                            };
+                        }
+                        return { ...enchant };
+                    }),
+                    sourceRNG: pendingRolls[index].finalRng,
+                    variant: pendingRolls[index].variant,
+                    stars: stars,
+                    locked: false,
+                    rollsWithOvertime: 0
+                };
+                enchantOrbs.push(orb);
+            }
+            
+            delete pendingRolls[index];
+            
+            const roller = document.getElementById(`roller-${index}`);
+            if (roller) {
+                const actionElements = roller.querySelector('.roll-actions');
+                actionElements.style.display = 'none';
+            }
+            
+            updateInventory();
+            updateEnchantInventory();
+            updateMergeSelects();
+            updateUI();
+            saveGame();
+        }
 
         function declineRoll(index) {
             if (!pendingRolls[index]) return;
@@ -1461,6 +1558,12 @@
 
         function equipEnchantOrb(index) {
             equippedOrb = enchantOrbs[index];
+            
+            // Initialize overtime rolls tracking if not exists
+            if (!equippedOrb.rollsWithOvertime) {
+                equippedOrb.rollsWithOvertime = 0;
+            }
+            
             updateEnchantInventory();
             updateUI();
             updateRollers();
@@ -1494,11 +1597,13 @@
             setTimeout(() => {
                 let maxRoll = 0;
                 let foundSecretToPause = false;
+                let foundEnchantToPause = false;
                 
                 for (let i = 0; i < totalRollers; i++) {
                     let baseRng = calculateRNG();
                     let secret = checkSecret(baseRng);
                     
+                    // FIXED: Solar multiplier only applies when secret is solar
                     if (secret === 'solar') {
                         baseRng *= 100000;
                     } else if (secret === 'Completionist') {
@@ -1528,6 +1633,25 @@
                     const generatedEnchants = generateEnchants(baseRng);
                     generatedEnchants.forEach(e => discovered.enchants.add(e.name));
                     
+                    // Update Overtime enchant if equipped
+                    if (equippedOrb && equippedOrb.enchants) {
+                        equippedOrb.enchants.forEach(enchant => {
+                            if (enchant.type === 'overtime') {
+                                // Increment rolls counter
+                                if (!equippedOrb.rollsWithOvertime) {
+                                    equippedOrb.rollsWithOvertime = 0;
+                                }
+                                equippedOrb.rollsWithOvertime++;
+                                
+                                // Increase all stats by 0.001
+                                enchant.currentLuck += 0.001;
+                                enchant.currentSpeed += 0.001;
+                                enchant.currentVariant += 0.001;
+                                enchant.currentSecret += 0.001;
+                            }
+                        });
+                    }
+                    
                     const stars = generatedEnchants.length > 0 ? generateStars(true) : 0;
                     displayRoll(i, baseRng, finalRng, rankName, variant.name, generatedEnchants, stars);
                     
@@ -1541,8 +1665,23 @@
                         timestamp: Date.now()
                     };
                     
+                    // Check for pause conditions
                     pauseRNGThreshold = parseFloat(document.getElementById('pauseRNG').value) || 0;
                     pauseSecretRarityThreshold = parseFloat(document.getElementById('pauseSecretRarity').value) || 0;
+                    pauseEnchantRarityThreshold = parseFloat(document.getElementById('pauseEnchantRarity').value) || 0;
+                    
+                    // Check enchant rarity for pause
+                    if (pauseEnchantRarityThreshold > 0 && generatedEnchants.length > 0) {
+                        generatedEnchants.forEach(enchant => {
+                            const enchantType = ENCHANT_TYPES.find(e => e.name === enchant.name);
+                            if (enchantType) {
+                                const rarity = 1 / enchantType.chance;
+                                if (rarity >= pauseEnchantRarityThreshold) {
+                                    foundEnchantToPause = true;
+                                }
+                            }
+                        });
+                    }
                     
                     if (isAutorolling && pauseRNGThreshold > 0 && finalRng >= pauseRNGThreshold) {
                         toggleAutoroll();
@@ -1560,6 +1699,11 @@
                 if (foundSecretToPause && isAutorolling) {
                     toggleAutoroll();
                     alert(`Autoroll paused! Found secret with rarity ≥ ${formatNumber(pauseSecretRarityThreshold)}.`);
+                }
+                
+                if (foundEnchantToPause && isAutorolling) {
+                    toggleAutoroll();
+                    alert(`Autoroll paused! Found enchant with rarity ≥ ${formatNumber(pauseEnchantRarityThreshold)}.`);
                 }
                 
                 updateUI();
@@ -1653,15 +1797,18 @@
             const wheel = document.getElementById('spinnerWheel');
             wheel.innerHTML = '<div class="wheel-pointer"></div>';
             
+            // Calculate total weight for proper distribution
+            const totalWeight = SPINNER_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
             let startAngle = 0;
-            const segmentAngle = 360 / SPINNER_REWARDS.length;
             
             SPINNER_REWARDS.forEach((reward, index) => {
+                const segmentAngle = (reward.weight / totalWeight) * 360;
                 const segment = document.createElement('div');
                 segment.className = 'wheel-segment';
                 segment.style.backgroundColor = reward.color;
                 segment.style.transform = `rotate(${startAngle}deg)`;
-                segment.innerHTML = `<div style="transform: rotate(${segmentAngle/2}deg);">${reward.name}</div>`;
+                segment.style.clipPath = `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.cos((segmentAngle * Math.PI) / 180)}% ${50 - 50 * Math.sin((segmentAngle * Math.PI) / 180)}%)`;
+                segment.innerHTML = `<div style="transform: rotate(${segmentAngle/2}deg) translate(30px) rotate(-${segmentAngle/2}deg); font-size: 8px;">${reward.name}</div>`;
                 wheel.appendChild(segment);
                 startAngle += segmentAngle;
             });
@@ -1686,9 +1833,29 @@
             wheel.style.transform = `rotate(${totalRotation}deg)`;
             
             setTimeout(() => {
+                // Calculate total weight
+                const totalWeight = SPINNER_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
+                
+                // Normalize the rotation to 0-360
                 const normalizedRotation = totalRotation % 360;
-                const segmentAngle = 360 / SPINNER_REWARDS.length;
-                const winningIndex = Math.floor((360 - normalizedRotation) / segmentAngle) % SPINNER_REWARDS.length;
+                
+                // Find which segment the pointer is pointing to
+                let cumulativeAngle = 0;
+                let winningIndex = 0;
+                
+                for (let i = 0; i < SPINNER_REWARDS.length; i++) {
+                    const segmentAngle = (SPINNER_REWARDS[i].weight / totalWeight) * 360;
+                    cumulativeAngle += segmentAngle;
+                    
+                    // The pointer is at the top (0 degrees), so we need to check if normalizedRotation
+                    // falls within this segment when looking from the pointer's perspective
+                    const pointerAngle = (360 - normalizedRotation) % 360;
+                    
+                    if (pointerAngle < cumulativeAngle) {
+                        winningIndex = i;
+                        break;
+                    }
+                }
                 
                 const reward = SPINNER_REWARDS[winningIndex];
                 
@@ -1765,13 +1932,18 @@
                     ? `<div style="font-size: 11px; color: gold;">${'⭐'.repeat(item.stars)}</div>`
                     : '';
                 
+                // Apply inventory tier border
+                const tier = getInventoryTier(item.finalRng);
+                const tierClass = `tier-${tier.stars}`;
+                
                 return `
-                    <div class="inventory-item ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'Completionist' ? 'completionist-rank' : ''}">
+                    <div class="inventory-item ${tierClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'Completionist' ? 'completionist-rank' : ''}">
                         <div>
                             <span class="inventory-rng" style="${style}">${formatNumber(item.finalRng)}</span>
                             <div class="inventory-details">${item.rank} - ${item.variant} (x${formatNumber(Math.round(item.finalRng/item.baseRng))})</div>
                             ${starsHTML}
                             ${enchantsHTML}
+                            <div style="font-size: 10px; color: #999;">Tier ${tier.stars}★</div>
                         </div>
                         <button class="decline-btn" onclick="deleteInventoryItem(${index})" style="padding: 5px 15px; font-size: 12px;">delete</button>
                     </div>
@@ -1843,6 +2015,14 @@
             if (enchant.type === 'weird') {
                 const val = applyStarBonus(enchant.value, stars);
                 return `+${val.toFixed(2)} enchant luck${starBonus}`;
+            }
+            if (enchant.type === 'overtime') {
+                const luck = applyStarBonus(enchant.currentLuck, stars);
+                const speed = applyStarBonus(enchant.currentSpeed, stars);
+                const variant = applyStarBonus(enchant.currentVariant, stars);
+                const secret = applyStarBonus(enchant.currentSecret, stars);
+                const rolls = (enchant.rollsWithOvertime || 0);
+                return `+${luck.toFixed(3)} luck, +${speed.toFixed(3)}s speed, +${variant.toFixed(3)} variant, +${secret.toFixed(3)} secret (${rolls} rolls)${starBonus}`;
             }
             return '';
         }
@@ -1982,7 +2162,7 @@
             
             // Remove overridden enchants
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime'];
             
             if (alphaEnchants.length > 0) {
                 // Add all alphas
@@ -2039,7 +2219,7 @@
             
             // Remove overridden enchants
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime'];
             
             if (alphaEnchants.length > 0) {
                 // Add all alphas
@@ -2048,7 +2228,22 @@
                 // Add non-overridden enchants
                 otherEnchants.forEach(enchant => {
                     if (!shouldOverrideEnchant(enchant.name) || overrideExceptions.includes(enchant.name.toLowerCase())) {
-                        finalEnchants.push(enchant);
+                        // Special handling for overtime - combine rolls counter
+                        if (enchant.type === 'overtime') {
+                            const existingOvertime = finalEnchants.find(e => e.type === 'overtime');
+                            if (existingOvertime) {
+                                // Average the stats
+                                existingOvertime.currentLuck = (existingOvertime.currentLuck + enchant.currentLuck) / 2;
+                                existingOvertime.currentSpeed = (existingOvertime.currentSpeed + enchant.currentSpeed) / 2;
+                                existingOvertime.currentVariant = (existingOvertime.currentVariant + enchant.currentVariant) / 2;
+                                existingOvertime.currentSecret = (existingOvertime.currentSecret + enchant.currentSecret) / 2;
+                                existingOvertime.rollsWithOvertime = Math.max(existingOvertime.rollsWithOvertime || 0, enchant.rollsWithOvertime || 0);
+                            } else {
+                                finalEnchants.push(enchant);
+                            }
+                        } else {
+                            finalEnchants.push(enchant);
+                        }
                     }
                 });
             } else {
@@ -2068,7 +2263,8 @@
                 sourceRNG: Math.max(orb1.sourceRNG || 0, orb2.sourceRNG || 0),
                 variant: orb1.sourceRNG >= orb2.sourceRNG ? orb1.variant : orb2.variant,
                 stars: avgStars,
-                locked: shouldBeLocked
+                locked: shouldBeLocked,
+                rollsWithOvertime: Math.max(orb1.rollsWithOvertime || 0, orb2.rollsWithOvertime || 0)
             };
             
             // Delete the original orbs
@@ -2133,6 +2329,7 @@
                 if (enchant.type === 'addition') effect = `+${enchant.value} bulk roll`;
                 if (enchant.type === 'alpha') effect = `+0.25 luck, -0.05s speed, +0.5 secret, +0.125 variant`;
                 if (enchant.type === 'weird') effect = `+${enchant.value} enchant luck`;
+                if (enchant.type === 'overtime') effect = `+0.001 luck, +0.001s speed, +0.001 variant, +0.001 secret (grows per roll)`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant, +1 bulk';
                     else if (enchant.value === 2) effect = '+10 luck, +0.5s speed, +25 secret, +2.5 variant, +2 bulk';
@@ -2249,41 +2446,97 @@
                     },
                     inventory: inventory.map(item => ({
                         ...item,
-                        enchants: item.enchants ? item.enchants.map(e => ({
-                            name: e.name,
-                            type: e.type,
-                            value: e.value,
-                            color: e.color,
-                            priority: e.priority
-                        })) : []
+                        enchants: item.enchants ? item.enchants.map(e => {
+                            if (e.type === 'overtime') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    baseLuck: e.baseLuck,
+                                    baseSpeed: e.baseSpeed,
+                                    baseVariant: e.baseVariant,
+                                    baseSecret: e.baseSecret,
+                                    currentLuck: e.currentLuck,
+                                    currentSpeed: e.currentSpeed,
+                                    currentVariant: e.currentVariant,
+                                    currentSecret: e.currentSecret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            }
+                            return {
+                                name: e.name,
+                                type: e.type,
+                                value: e.value,
+                                color: e.color,
+                                priority: e.priority
+                            };
+                        }) : []
                     })),
                     enchantOrbs: enchantOrbs.map(orb => ({
                         id: orb.id,
-                        enchants: orb.enchants.map(e => ({
-                            name: e.name,
-                            type: e.type,
-                            value: e.value,
-                            color: e.color,
-                            priority: e.priority
-                        })),
+                        enchants: orb.enchants.map(e => {
+                            if (e.type === 'overtime') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    baseLuck: e.baseLuck,
+                                    baseSpeed: e.baseSpeed,
+                                    baseVariant: e.baseVariant,
+                                    baseSecret: e.baseSecret,
+                                    currentLuck: e.currentLuck,
+                                    currentSpeed: e.currentSpeed,
+                                    currentVariant: e.currentVariant,
+                                    currentSecret: e.currentSecret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            }
+                            return {
+                                name: e.name,
+                                type: e.type,
+                                value: e.value,
+                                color: e.color,
+                                priority: e.priority
+                            };
+                        }),
                         sourceRNG: orb.sourceRNG,
                         variant: orb.variant,
                         stars: orb.stars || 0,
-                        locked: orb.locked || false
+                        locked: orb.locked || false,
+                        rollsWithOvertime: orb.rollsWithOvertime || 0
                     })),
                     equippedOrb: equippedOrb ? {
                         id: equippedOrb.id,
-                        enchants: equippedOrb.enchants.map(e => ({
-                            name: e.name,
-                            type: e.type,
-                            value: e.value,
-                            color: e.color,
-                            priority: e.priority
-                        })),
+                        enchants: equippedOrb.enchants.map(e => {
+                            if (e.type === 'overtime') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    baseLuck: e.baseLuck,
+                                    baseSpeed: e.baseSpeed,
+                                    baseVariant: e.baseVariant,
+                                    baseSecret: e.baseSecret,
+                                    currentLuck: e.currentLuck,
+                                    currentSpeed: e.currentSpeed,
+                                    currentVariant: e.currentVariant,
+                                    currentSecret: e.currentSecret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            }
+                            return {
+                                name: e.name,
+                                type: e.type,
+                                value: e.value,
+                                color: e.color,
+                                priority: e.priority
+                            };
+                        }),
                         sourceRNG: equippedOrb.sourceRNG,
                         variant: equippedOrb.variant,
                         stars: equippedOrb.stars || 0,
-                        locked: equippedOrb.locked || false
+                        locked: equippedOrb.locked || false,
+                        rollsWithOvertime: equippedOrb.rollsWithOvertime || 0
                     } : null
                 };
                 localStorage.setItem('polys-rng-save', JSON.stringify(saveData));
@@ -2340,12 +2593,14 @@
                     enchantOrbs.forEach(orb => {
                         if (orb.stars === undefined) orb.stars = 0;
                         if (orb.locked === undefined) orb.locked = false;
+                        if (orb.rollsWithOvertime === undefined) orb.rollsWithOvertime = 0;
                     });
                     
                     equippedOrb = saveData.equippedOrb || null;
                     if (equippedOrb) {
                         if (equippedOrb.stars === undefined) equippedOrb.stars = 0;
                         if (equippedOrb.locked === undefined) equippedOrb.locked = false;
+                        if (equippedOrb.rollsWithOvertime === undefined) equippedOrb.rollsWithOvertime = 0;
                     }
                     
                     // Start ticket timer if game loaded successfully
