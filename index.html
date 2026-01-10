@@ -1390,45 +1390,44 @@
         }
 
         function acceptRoll(index) {
-            if (!pendingRolls[index]) return;
-            
-            const maxSlots = 10 + invLevel;
-            if (inventory.length >= maxSlots) {
-                alert('inventory is full! buy more slots or decline some rolls.');
-                return;
-            }
-            
-            inventory.unshift(pendingRolls[index]);
-            
-            if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
-                const stars = pendingRolls[index].stars || 0;
-                if (stars > 0) {
-                    const orb = {
-                        id: Date.now() + Math.random(),
-                        enchants: pendingRolls[index].enchants,
-                        sourceRNG: pendingRolls[index].finalRng,
-                        variant: pendingRolls[index].variant,
-                        stars: stars,
-                        locked: false
-                    };
-                    enchantOrbs.push(orb);
-                }
-            }
-            
-            delete pendingRolls[index];
-            
-            const roller = document.getElementById(`roller-${index}`);
-            if (roller) {
-                const actionElements = roller.querySelector('.roll-actions');
-                actionElements.style.display = 'none';
-            }
-            
-            updateInventory();
-            updateEnchantInventory();
-            updateMergeSelects();
-            updateUI();
-            saveGame();
-        }
+    if (!pendingRolls[index]) return;
+    
+    const maxSlots = 10 + invLevel;
+    if (inventory.length >= maxSlots) {
+        alert('inventory is full! buy more slots or decline some rolls.');
+        return;
+    }
+    
+    inventory.unshift(pendingRolls[index]);
+    
+    // BUG FIX: Create enchant orb if there are ANY enchants, even without stars
+    if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
+        const stars = pendingRolls[index].stars || 0;
+        const orb = {
+            id: Date.now() + Math.random(),
+            enchants: pendingRolls[index].enchants,
+            sourceRNG: pendingRolls[index].finalRng,
+            variant: pendingRolls[index].variant,
+            stars: stars, // Can be 0!
+            locked: false
+        };
+        enchantOrbs.push(orb);
+    }
+    
+    delete pendingRolls[index];
+    
+    const roller = document.getElementById(`roller-${index}`);
+    if (roller) {
+        const actionElements = roller.querySelector('.roll-actions');
+        actionElements.style.display = 'none';
+    }
+    
+    updateInventory();
+    updateEnchantInventory();
+    updateMergeSelects();
+    updateUI();
+    saveGame();
+}
 
         function declineRoll(index) {
             if (!pendingRolls[index]) return;
