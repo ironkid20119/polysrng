@@ -217,8 +217,8 @@
             color: gold;
         }
         .accept-btn {
-            background: #ff69b4;
-            color: white;
+            background: #90ee90;
+            color: black;
             border: none;
             padding: 8px 20px;
             font-size: 14px;
@@ -508,6 +508,66 @@
         .solar-rank {
             color: orange !important;
         }
+        .completionist-rank {
+            color: #00ffff !important;
+        }
+        .tickets-upgrades {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #ffd700;
+        }
+        .tickets-title {
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 20px;
+        }
+        .spinner-section {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 2px dashed #9370db;
+            text-align: center;
+        }
+        .wheel {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid #ff69b4;
+            margin: 15px auto;
+            position: relative;
+            overflow: hidden;
+            transition: transform 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .wheel-segment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 50% 0%, 100% 0%);
+            transform-origin: 50% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            text-align: center;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #ff4444;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
@@ -537,6 +597,10 @@
                 <div class="stat-label">roll coins</div>
                 <div class="stat-value" id="rollCoins">0</div>
             </div>
+            <div class="stat-box">
+                <div class="stat-label">tickets</div>
+                <div class="stat-value" id="tickets">0</div>
+            </div>
         </div>
 
         <div class="autoroll-controls">
@@ -544,6 +608,10 @@
             <div style="margin-top: 10px;">
                 <label style="font-size: 14px; color: #666;">Pause on RNG ≥ </label>
                 <input type="number" id="pauseRNG" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
+            </div>
+            <div style="margin-top: 10px;">
+                <label style="font-size: 14px; color: #666;">Pause on Secret Rarity ≥ </label>
+                <input type="number" id="pauseSecretRarity" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
             </div>
         </div>
 
@@ -567,7 +635,32 @@
         </div>
 
         <div class="button-container">
-            <button onclick="roll()" id="rollBtn">roll</button>
+            <button onclick="performRoll()" id="rollBtn">roll</button>
+        </div>
+
+        <div class="tickets-upgrades">
+            <div class="tickets-title">🎫 Ticket Shop</div>
+            <div class="upgrade-box">
+                <div class="upgrade-title">min speed reduction</div>
+                <div class="upgrade-info">level: <span id="minSpeedLevel">0</span>/4</div>
+                <div class="upgrade-info">effect: -0.01s min roll speed</div>
+                <button onclick="buyMinSpeedUpgrade()" id="minSpeedBtn">buy (cost: <span id="minSpeedCost">5</span> tickets)</button>
+            </div>
+            <div class="upgrade-box">
+                <div class="upgrade-title">spinner unlock</div>
+                <div class="upgrade-info">status: <span id="spinnerStatus">locked</span></div>
+                <div class="upgrade-info">effect: unlock enchant spinner</div>
+                <button onclick="buySpinner()" id="spinnerBtn" disabled>buy (cost: <span id="spinnerCost">10</span> tickets)</button>
+            </div>
+            
+            <div class="spinner-section" id="spinnerSection" style="display: none;">
+                <div class="upgrade-title">🎡 Enchant Spinner</div>
+                <div class="wheel" id="spinnerWheel">
+                    <div class="wheel-pointer"></div>
+                </div>
+                <button onclick="spinWheel()" id="spinBtn" disabled>Spin (5 tickets)</button>
+                <div id="spinResult" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
+            </div>
         </div>
 
         <div class="sections-container">
@@ -691,6 +784,11 @@
     </div>
 
     <script>
+        // Fix: Changed roll function name to performRoll to avoid conflict
+        function performRoll() {
+            roll();
+        }
+
         // Helper function to format numbers
         function formatNumber(num) {
             if (num >= 1e9) {
@@ -735,7 +833,7 @@
             { name: 'microscopic', min: 5e8, max: 1e9 },
             { name: 'hyper', min: 1e9, max: 1e10 },
             { name: 'insurmountable', min: 1e10, max: 1e15 },
-            { name: 'INFINITE', min: 1e15, max: Infinity }
+            { name: 'infinite', min: 1e15, max: Infinity }
         ];
 
         const SECRETS = [
@@ -751,7 +849,8 @@
             { name: 'imaginary', chance: 250000 },
             { name: 'micro', chance: 1/500000 },
             { name: 'everlasting', chance: 575265 },
-            { name: 'solar', chance: 100000 }
+            { name: 'solar', chance: 100000 },
+            { name: 'Completionist', chance: 1000000 }
         ];
 
         const ENCHANT_TYPES = [
@@ -781,11 +880,25 @@
             { name: 'unusual', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 }
         ];
 
+        // SPINNER REWARDS
+        const SPINNER_REWARDS = [
+            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/1 },
+            { name: 'speed iii', type: 'speed', value: 0.75, color: '#0066cc', chance: 1/2 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/4 },
+            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', chance: 1/8 }, // luck ii + speed ii + insight i
+            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/16 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/32 },
+            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/64 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/128 },
+            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/50000 }
+        ];
+
         // game state
         let polycoin = 0;
         let bestRoll = 0;
         let totalRolls = 0;
         let rollCoins = 0;
+        let tickets = 0;
         let bulkLevel = 1;
         let bulkCost = 100;
         let luckLevel = 0;
@@ -800,9 +913,12 @@
         let enchantLuckCost = 30;
         let variantLuckLevel = 0;
         let variantLuckCost = 50;
+        let minSpeedUpgrades = 0;
+        let spinnerUnlocked = false;
         let isRolling = false;
         let isAutorolling = false;
         let autorollInterval = null;
+        let ticketInterval = null;
         let inventory = [];
         let enchantOrbs = [];
         let equippedOrb = null;
@@ -816,6 +932,7 @@
         let cooldownThreshold = 0;
         let cooldownTime = 3;
         let pauseRNGThreshold = 0;
+        let pauseSecretRarityThreshold = 0;
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -873,24 +990,25 @@
         }
 
         function getRNGColor(rng, rankName) {
-    if (rankName === 'solar') return 'orange';
-    if (rng < 1000) return '#aad7e6';
-    if (rng < 10000) return '#ffc0cb';
-    if (rng < 100000) return '#90ee90';
-    if (rng < 1000000) return '#9370db';
-    if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
-    if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
-    if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
-    if (rng < 10000000000) return 'linear-gradient(25deg, #4ef542, #ffffff)';
-    if (rng < 100000000000) return 'linear-gradient(45deg, #ff00ff, #00ffff, #ffffff)';
-    if (rng < 1000000000000) return 'linear-gradient(135deg, #ff0000, #ff9900, #ffff00, #ffffff)';
-    if (rng < 10000000000000) return 'linear-gradient(90deg, #0000ff, #00ff00, #ffff00, #ffffff)';
-    if (rng < 100000000000000) return 'linear-gradient(120deg, #8b00ff, #ff00ff, #00ffff, #ffffff)';
-    if (rng < 1000000000000000) return 'linear-gradient(180deg, #ff0000, #000000, #00ff00, #ffffff)';
-    if (rng < 10000000000000000) return 'linear-gradient(225deg, #00ffff, #000000, #ffff00, #ffffff)';
-    if (rng < 100000000000000000) return 'linear-gradient(270deg, #ff0000, #00ff00, #0000ff, #ffffff)';
-    return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
-}
+            if (rankName === 'solar') return 'orange';
+            if (rankName === 'Completionist') return '#00ffff';
+            if (rng < 1000) return '#aad7e6';
+            if (rng < 10000) return '#ffc0cb';
+            if (rng < 100000) return '#90ee90';
+            if (rng < 1000000) return '#9370db';
+            if (rng < 10000000) return 'linear-gradient(90deg, #ff0000, #ffffff)';
+            if (rng < 100000000) return 'linear-gradient(90deg, #00ffff, #ffffff)';
+            if (rng < 1000000000) return 'linear-gradient(90deg, #000000, #8b0000)';
+            if (rng < 10000000000) return 'linear-gradient(25deg, #4ef542, #ffffff)';
+            if (rng < 100000000000) return 'linear-gradient(45deg, #ff00ff, #00ffff, #ffffff)';
+            if (rng < 1000000000000) return 'linear-gradient(135deg, #ff0000, #ff9900, #ffff00, #ffffff)';
+            if (rng < 10000000000000) return 'linear-gradient(90deg, #0000ff, #00ff00, #ffff00, #ffffff)';
+            if (rng < 100000000000000) return 'linear-gradient(120deg, #8b00ff, #ff00ff, #00ffff, #ffffff)';
+            if (rng < 1000000000000000) return 'linear-gradient(180deg, #ff0000, #000000, #00ff00, #ffffff)';
+            if (rng < 10000000000000000) return 'linear-gradient(225deg, #00ffff, #000000, #ffff00, #ffffff)';
+            if (rng < 100000000000000000) return 'linear-gradient(270deg, #ff0000, #00ff00, #0000ff, #ffffff)';
+            return 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)';
+        }
 
         function calculateRNG() {
             const luck = luckLevel * 0.5 + getTotalEnchantLuck();
@@ -951,7 +1069,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'speed') total += applyStarBonus(enchant.value, stars);
-                if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars); // Negative for faster
+                if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.25, stars);
                     else if (enchant.value === 2) total += applyStarBonus(0.5, stars);
@@ -998,7 +1116,7 @@
         }
 
         function getTotalBulkRolls() {
-            let total = Math.min(bulkLevel, 100); // Base rollers capped at 100
+            let total = Math.min(bulkLevel, 100);
             
             if (!equippedOrb) return total;
             
@@ -1013,7 +1131,7 @@
                 }
             });
             
-            return Math.min(total, 100); // Hard cap at 100
+            return Math.min(total, 100);
         }
 
         function getRank(rng) {
@@ -1041,12 +1159,29 @@
             const secretLuck = secretLevel * 0.2 + getTotalEnchantSecret();
             const random = Math.random();
             
+            // Check if all normal ranks are discovered for Completionist
+            let allNormalRanksDiscovered = true;
+            for (const rank of RANKS) {
+                if (!discovered.ranks.has(rank.name)) {
+                    allNormalRanksDiscovered = false;
+                    break;
+                }
+            }
+            
             // Special handling for solar - 1/100000 chance to replace eclipse
             if (baseRng >= 250 && baseRng < 500 && random <= 1/100000) {
                 return 'solar';
             }
             
+            // Special handling for Completionist - always rollable when all normal ranks discovered
+            if (allNormalRanksDiscovered && random <= 1/1000000) {
+                return 'Completionist';
+            }
+            
             for (let i = SECRETS.length - 1; i >= 0; i--) {
+                // Skip Completionist if we already handled it
+                if (SECRETS[i].name === 'Completionist') continue;
+                
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
                     return SECRETS[i].name;
@@ -1083,16 +1218,14 @@
             
             // Generate other enchants (skip if alpha overrides them)
             ENCHANT_TYPES.forEach(enchant => {
-                if (enchant.name === 'alpha') return; // Already handled
+                if (enchant.name === 'alpha') return;
                 
-                // Skip if alpha should override this enchant
                 if (hasAlpha && shouldOverrideEnchant(enchant.name)) {
                     return;
                 }
                 
                 const adjustedChance = enchant.chance * (1 + enchantLuck);
                 if (Math.random() <= adjustedChance) {
-                    // If we already have this type, keep the one with higher priority (better enchant)
                     if (!generated[enchant.type] || generated[enchant.type].priority < enchant.priority) {
                         generated[enchant.type] = {
                             name: enchant.name,
@@ -1105,17 +1238,14 @@
                 }
             });
             
-            // Convert to array and sort by type
             return Object.values(generated).sort((a, b) => a.type.localeCompare(b.type));
         }
 
         function generateStars(hasEnchants) {
             if (!hasEnchants) return 0;
             
-            // 1/3 chance to have stars
             if (Math.random() > 1/3) return 0;
             
-            // If we have stars, determine how many
             const starRolls = [
                 { stars: 1, chance: 1/1 },
                 { stars: 2, chance: 1/3 },
@@ -1130,7 +1260,7 @@
                 }
             }
             
-            return 1; // Default to 1 star
+            return 1;
         }
 
         function updateRollers() {
@@ -1216,7 +1346,6 @@
             variantBox.textContent = variantName;
             nameEl.textContent = rankName;
             
-            // Only show stars if there are enchants
             if (generatedEnchants && generatedEnchants.length > 0 && stars && stars > 0) {
                 starIndicator.textContent = '⭐'.repeat(stars);
                 starIndicator.style.display = 'block';
@@ -1250,11 +1379,13 @@
                 resultEl.style.color = color;
             }
             
-            // Add solar class for solar rank
             if (rankName === 'solar') {
                 resultEl.classList.add('solar-rank');
+            } else if (rankName === 'Completionist') {
+                resultEl.classList.add('completionist-rank');
             } else {
                 resultEl.classList.remove('solar-rank');
+                resultEl.classList.remove('completionist-rank');
             }
         }
 
@@ -1269,7 +1400,6 @@
             
             inventory.unshift(pendingRolls[index]);
             
-            // Create enchant orb only if there are enchants AND stars
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
                 const stars = pendingRolls[index].stars || 0;
                 if (stars > 0) {
@@ -1319,7 +1449,6 @@
         }
 
         function deleteEnchantOrb(index) {
-            // Unequip if this orb is equipped
             if (equippedOrb && enchantOrbs[index].id === equippedOrb.id) {
                 equippedOrb = null;
             }
@@ -1360,45 +1489,46 @@
             
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
-            const rollSpeed = Math.max(0.05, baseSpeed - speedReduction);
+            const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
+            const rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
             
             setTimeout(() => {
                 let maxRoll = 0;
+                let foundSecretToPause = false;
                 
                 for (let i = 0; i < totalRollers; i++) {
                     let baseRng = calculateRNG();
                     let secret = checkSecret(baseRng);
                     
-                    // Handle solar rank - multiply RNG by 100,000
                     if (secret === 'solar') {
                         baseRng *= 100000;
+                    } else if (secret === 'Completionist') {
+                        baseRng = -500;
                     }
                     
                     const variant = getVariant();
-                    const finalRng = baseRng * variant.multipliesRNG;
+                    const finalRng = secret === 'Completionist' ? -500 : baseRng * variant.multipliesRNG;
                     
                     if (finalRng > maxRoll) maxRoll = finalRng;
                     
                     const rankName = secret || getRank(baseRng);
                     
-                    // Track discoveries
                     discovered.variants.add(variant.name);
                     discovered.ranks.add(rankName);
                     if (secret) discovered.secrets.add(secret);
                     
-                    const gain = Math.floor(Math.pow(finalRng, 0.8) * 0.75);
+                    const gain = secret === 'Completionist' ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
-                    rollCoins += 1; // Add roll coin
+                    rollCoins += 1;
                     totalRolls++;
                     
-                    if (finalRng > bestRoll) {
+                    if (finalRng > bestRoll && secret !== 'Completionist') {
                         bestRoll = finalRng;
                     }
                     
                     const generatedEnchants = generateEnchants(baseRng);
                     generatedEnchants.forEach(e => discovered.enchants.add(e.name));
                     
-                    // Only generate stars if there are enchants
                     const stars = generatedEnchants.length > 0 ? generateStars(true) : 0;
                     displayRoll(i, baseRng, finalRng, rankName, variant.name, generatedEnchants, stars);
                     
@@ -1412,12 +1542,25 @@
                         timestamp: Date.now()
                     };
                     
-                    // Check if we should pause autoroll based on RNG threshold
                     pauseRNGThreshold = parseFloat(document.getElementById('pauseRNG').value) || 0;
+                    pauseSecretRarityThreshold = parseFloat(document.getElementById('pauseSecretRarity').value) || 0;
+                    
                     if (isAutorolling && pauseRNGThreshold > 0 && finalRng >= pauseRNGThreshold) {
-                        toggleAutoroll(); // Pause autoroll
+                        toggleAutoroll();
                         alert(`Autoroll paused! Found roll with RNG ≥ ${formatNumber(pauseRNGThreshold)}.`);
                     }
+                    
+                    if (isAutorolling && pauseSecretRarityThreshold > 0 && secret) {
+                        const secretObj = SECRETS.find(s => s.name === secret);
+                        if (secretObj && secretObj.chance >= pauseSecretRarityThreshold) {
+                            foundSecretToPause = true;
+                        }
+                    }
+                }
+                
+                if (foundSecretToPause && isAutorolling) {
+                    toggleAutoroll();
+                    alert(`Autoroll paused! Found secret with rarity ≥ ${formatNumber(pauseSecretRarityThreshold)}.`);
                 }
                 
                 updateUI();
@@ -1425,7 +1568,6 @@
                 saveGame();
                 isRolling = false;
                 
-                // Apply cooldown if threshold is met
                 if (cooldownThreshold > 0 && maxRoll >= cooldownThreshold) {
                     let countdown = cooldownTime;
                     const rollBtn = document.getElementById('rollBtn');
@@ -1489,6 +1631,114 @@
             saveGame();
         }
 
+        function buyMinSpeedUpgrade() {
+            if (minSpeedUpgrades >= 4 || tickets < 5) return;
+            tickets -= 5;
+            minSpeedUpgrades++;
+            updateUI();
+            saveGame();
+        }
+
+        function buySpinner() {
+            if (spinnerUnlocked || tickets < 10) return;
+            tickets -= 10;
+            spinnerUnlocked = true;
+            document.getElementById('spinnerSection').style.display = 'block';
+            document.getElementById('spinBtn').disabled = tickets < 5;
+            createSpinnerWheel();
+            updateUI();
+            saveGame();
+        }
+
+        function createSpinnerWheel() {
+            const wheel = document.getElementById('spinnerWheel');
+            wheel.innerHTML = '<div class="wheel-pointer"></div>';
+            
+            let startAngle = 0;
+            const segmentAngle = 360 / SPINNER_REWARDS.length;
+            
+            SPINNER_REWARDS.forEach((reward, index) => {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                segment.style.backgroundColor = reward.color;
+                segment.style.transform = `rotate(${startAngle}deg)`;
+                segment.innerHTML = `<div style="transform: rotate(${segmentAngle/2}deg);">${reward.name}</div>`;
+                wheel.appendChild(segment);
+                startAngle += segmentAngle;
+            });
+        }
+
+        function spinWheel() {
+            if (!spinnerUnlocked || tickets < 5) return;
+            
+            tickets -= 5;
+            const spinBtn = document.getElementById('spinBtn');
+            const resultDiv = document.getElementById('spinResult');
+            
+            spinBtn.disabled = true;
+            resultDiv.textContent = 'Spinning...';
+            
+            const wheel = document.getElementById('spinnerWheel');
+            const spinDuration = 2000 + Math.random() * 1000;
+            const spins = 5 + Math.random() * 3;
+            const totalRotation = 360 * spins;
+            
+            wheel.style.transition = `transform ${spinDuration}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+            
+            setTimeout(() => {
+                const normalizedRotation = totalRotation % 360;
+                const segmentAngle = 360 / SPINNER_REWARDS.length;
+                const winningIndex = Math.floor((360 - normalizedRotation) / segmentAngle) % SPINNER_REWARDS.length;
+                
+                const reward = SPINNER_REWARDS[winningIndex];
+                
+                let enchants = [];
+                if (reward.name === 'combo') {
+                    enchants = [
+                        { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', priority: 2 },
+                        { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', priority: 2 },
+                        { name: 'insight i', type: 'secret', value: 5, color: '#9370db', priority: 1 }
+                    ];
+                } else {
+                    enchants = [{
+                        name: reward.name,
+                        type: reward.type,
+                        value: reward.value,
+                        color: reward.color,
+                        priority: reward.priority || 1
+                    }];
+                }
+                
+                const stars = generateStars(true);
+                const orb = {
+                    id: Date.now() + Math.random(),
+                    enchants: enchants,
+                    sourceRNG: 0,
+                    variant: 'spinner',
+                    stars: stars,
+                    locked: false
+                };
+                
+                enchantOrbs.push(orb);
+                updateEnchantInventory();
+                updateMergeSelects();
+                updateUI();
+                saveGame();
+                
+                resultDiv.innerHTML = `Won: <strong style="color: ${reward.color}">${reward.name}</strong>${stars > 0 ? ' with ' + '⭐'.repeat(stars) + ' stars' : ''}!`;
+                spinBtn.disabled = tickets < 5;
+                
+                setTimeout(() => {
+                    wheel.style.transition = 'none';
+                    wheel.style.transform = 'rotate(0deg)';
+                    setTimeout(() => {
+                        wheel.style.transition = `transform ${spinDuration}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
+                    }, 50);
+                }, 1000);
+            }, spinDuration);
+        }
+
         function updateInventory() {
             const list = document.getElementById('inventoryList');
             const maxSlots = 10 + invLevel;
@@ -1517,7 +1767,7 @@
                     : '';
                 
                 return `
-                    <div class="inventory-item ${item.rank === 'solar' ? 'solar-rank' : ''}">
+                    <div class="inventory-item ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'Completionist' ? 'completionist-rank' : ''}">
                         <div>
                             <span class="inventory-rng" style="${style}">${formatNumber(item.finalRng)}</span>
                             <div class="inventory-details">${item.rank} - ${item.variant} (x${formatNumber(Math.round(item.finalRng/item.baseRng))})</div>
@@ -1615,7 +1865,6 @@
             document.getElementById('enchantCount').textContent = formatNumber(enchantOrbs.length);
             document.getElementById('enchants').textContent = formatNumber(enchantOrbs.length);
             
-            // Update equipped orb display
             if (!equippedOrb) {
                 equippedList.innerHTML = '<div style="text-align: center; color: #999;">no enchant orb equipped!</div>';
             } else {
@@ -1639,7 +1888,6 @@
                 `;
             }
             
-            // Update enchant orbs list
             if (enchantOrbs.length === 0) {
                 inventoryList.innerHTML = '<div style="text-align: center; color: #999;">no enchant orbs yet!</div>';
                 return;
@@ -1722,10 +1970,9 @@
             
             mergeBtn.disabled = false;
             
-            // Count alphas
+            // Check if both orbs have alpha enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
-            const totalAlphas = alphaCount1 + alphaCount2;
             
             // Combine enchants
             const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
@@ -1734,7 +1981,7 @@
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
             
-            // Remove overridden enchants (except for exceptions)
+            // Remove overridden enchants
             const finalEnchants = [];
             const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
             
@@ -1755,11 +2002,14 @@
             // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
+            // Determine if result should be locked (NOT locked if both have alpha)
+            const shouldBeLocked = !(alphaCount1 > 0 && alphaCount2 > 0);
+            
             preview.innerHTML = `
                 <strong>Merge Preview:</strong><br>
                 Combined enchants: ${finalEnchants.map(e => `<span style="color: ${e.color}">${e.name}</span>`).join(', ')}<br>
                 Stars: ${avgStars > 0 ? '⭐'.repeat(avgStars) : 'None'}<br>
-                Original orbs will be deleted, new orb will be locked.
+                Original orbs will be deleted${shouldBeLocked ? ', new orb will be locked.' : '.'}
             `;
         }
 
@@ -1775,10 +2025,9 @@
             
             if (orb1.locked || orb2.locked) return;
             
-            // Deduct roll coins
             rollCoins -= 500;
             
-            // Count alphas
+            // Check if both orbs have alpha enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
             
@@ -1789,7 +2038,7 @@
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
             
-            // Remove overridden enchants (except for exceptions)
+            // Remove overridden enchants
             const finalEnchants = [];
             const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality'];
             
@@ -1810,34 +2059,34 @@
             // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
-            // Create new merged orb (locked)
+            // Determine if result should be locked (NOT locked if both have alpha)
+            const shouldBeLocked = !(alphaCount1 > 0 && alphaCount2 > 0);
+            
+            // Create new merged orb
             const mergedOrb = {
                 id: Date.now() + Math.random(),
                 enchants: finalEnchants,
                 sourceRNG: Math.max(orb1.sourceRNG || 0, orb2.sourceRNG || 0),
                 variant: orb1.sourceRNG >= orb2.sourceRNG ? orb1.variant : orb2.variant,
                 stars: avgStars,
-                locked: true
+                locked: shouldBeLocked
             };
             
-            // Delete the original orbs (remove from array)
-            // Remove the higher index first to avoid index issues
+            // Delete the original orbs
             const higherIndex = Math.max(orb1Index, orb2Index);
             const lowerIndex = Math.min(orb1Index, orb2Index);
             
             enchantOrbs.splice(higherIndex, 1);
             enchantOrbs.splice(lowerIndex, 1);
             
-            // Add the new locked orb
             enchantOrbs.push(mergedOrb);
             
-            // Update displays
             updateEnchantInventory();
             updateMergeSelects();
             updateUI();
             saveGame();
             
-            alert('Enchants merged successfully! Original orbs deleted, new orb is locked.');
+            alert(`Enchants merged successfully! Original orbs deleted${shouldBeLocked ? ', new orb is locked' : ''}.`);
         }
 
         function updateIndex() {
@@ -1865,7 +2114,9 @@
                 const isDiscovered = discovered.secrets.has(s.name);
                 const icon = isDiscovered ? '✓' : '✗';
                 const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
-                const specialNote = s.name === 'solar' ? ' (replaces eclipse, x100,000)' : '';
+                let specialNote = '';
+                if (s.name === 'solar') specialNote = ' (replaces eclipse, x100,000)';
+                if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${formatNumber(s.chance)}${specialNote}</div>`;
             }).join('');
             document.getElementById('secretRanksIndexItems').innerHTML = secretsHTML;
@@ -1906,6 +2157,7 @@
             document.getElementById('best').textContent = formatNumber(bestRoll);
             document.getElementById('rolls').textContent = formatNumber(totalRolls);
             document.getElementById('rollCoins').textContent = formatNumber(rollCoins);
+            document.getElementById('tickets').textContent = formatNumber(tickets);
             
             document.getElementById('bulkLevel').textContent = formatNumber(bulkLevel);
             document.getElementById('bulkCost').textContent = formatNumber(bulkCost);
@@ -1922,8 +2174,9 @@
             document.getElementById('secretBtn').disabled = secretLevel >= 25 || polycoin < secretCost;
             
             const totalSpeedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
+            const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
             document.getElementById('speedLevel').textContent = formatNumber(speedLevel);
-            document.getElementById('speedAmount').textContent = Math.max(0.05, 3 - totalSpeedReduction).toFixed(2);
+            document.getElementById('speedAmount').textContent = Math.max(minRollSpeed, 3 - totalSpeedReduction).toFixed(2);
             document.getElementById('speedCost').textContent = formatNumber(speedCost);
             document.getElementById('speedBtn').disabled = speedLevel >= 25 || polycoin < speedCost;
             
@@ -1941,6 +2194,26 @@
             document.getElementById('variantLuckAmount').textContent = (variantLuckLevel * 0.05).toFixed(2);
             document.getElementById('variantLuckCost').textContent = formatNumber(variantLuckCost);
             document.getElementById('variantLuckBtn').disabled = variantLuckLevel >= 30 || polycoin < variantLuckCost;
+            
+            // Ticket shop updates
+            document.getElementById('minSpeedLevel').textContent = formatNumber(minSpeedUpgrades);
+            document.getElementById('minSpeedCost').textContent = formatNumber(5);
+            document.getElementById('minSpeedBtn').disabled = minSpeedUpgrades >= 4 || tickets < 5;
+            
+            document.getElementById('spinnerStatus').textContent = spinnerUnlocked ? 'unlocked' : 'locked';
+            document.getElementById('spinnerCost').textContent = formatNumber(10);
+            document.getElementById('spinnerBtn').disabled = spinnerUnlocked || tickets < 10;
+            
+            document.getElementById('spinBtn').disabled = !spinnerUnlocked || tickets < 5;
+        }
+
+        function startTicketTimer() {
+            if (ticketInterval) clearInterval(ticketInterval);
+            ticketInterval = setInterval(() => {
+                tickets++;
+                updateUI();
+                saveGame();
+            }, 60000); // 1 minute
         }
 
         function saveGame() {
@@ -1950,6 +2223,7 @@
                     bestRoll,
                     totalRolls,
                     rollCoins,
+                    tickets,
                     bulkLevel,
                     bulkCost,
                     luckLevel,
@@ -1963,6 +2237,8 @@
                     enchantLuckCost,
                     variantLuckLevel,
                     variantLuckCost,
+                    minSpeedUpgrades,
+                    spinnerUnlocked,
                     cooldownThreshold,
                     cooldownTime,
                     isAutorolling,
@@ -2027,6 +2303,7 @@
                     bestRoll = saveData.bestRoll || 0;
                     totalRolls = saveData.totalRolls || 0;
                     rollCoins = saveData.rollCoins || 0;
+                    tickets = saveData.tickets || 0;
                     bulkLevel = saveData.bulkLevel || 1;
                     bulkCost = saveData.bulkCost || 100;
                     luckLevel = saveData.luckLevel || 0;
@@ -2040,6 +2317,8 @@
                     enchantLuckCost = saveData.enchantLuckCost || 30;
                     variantLuckLevel = saveData.variantLuckLevel || 0;
                     variantLuckCost = saveData.variantLuckCost || 50;
+                    minSpeedUpgrades = saveData.minSpeedUpgrades || 0;
+                    spinnerUnlocked = saveData.spinnerUnlocked || false;
                     
                     cooldownThreshold = saveData.cooldownThreshold || 0;
                     cooldownTime = saveData.cooldownTime || 3;
@@ -2069,10 +2348,14 @@
                         if (equippedOrb.stars === undefined) equippedOrb.stars = 0;
                         if (equippedOrb.locked === undefined) equippedOrb.locked = false;
                     }
+                    
+                    // Start ticket timer if game loaded successfully
+                    startTicketTimer();
                 }
             } catch (error) {
                 console.log('no save data found or error loading:', error);
                 equippedOrb = null;
+                startTicketTimer();
             }
             
             updateRollers();
@@ -2081,6 +2364,11 @@
             updateMergeSelects();
             updateIndex();
             updateUI();
+            
+            if (spinnerUnlocked) {
+                document.getElementById('spinnerSection').style.display = 'block';
+                createSpinnerWheel();
+            }
         }
 
         // initialize
