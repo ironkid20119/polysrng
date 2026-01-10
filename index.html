@@ -350,34 +350,83 @@
             justify-content: space-between;
             align-items: center;
             transition: border 0.3s;
+            position: relative;
         }
         
         /* Inventory Outline Tiers */
-        .inventory-item.tier-1 { border: 2px solid white; }
-        .inventory-item.tier-2 { border: 2px solid yellow; }
-        .inventory-item.tier-3 { border: 2px solid blue; }
-        .inventory-item.tier-4 { border: 2px solid cyan; }
-        .inventory-item.tier-5 { border: 2px solid orange; }
-        .inventory-item.tier-6 { border: 2px solid pink; }
-        .inventory-item.tier-7 { border: 2px solid lime; }
+        .inventory-item.tier-1 { 
+            border: 3px solid white;
+            border-top: 15px solid white;
+        }
+        .inventory-item.tier-2 { 
+            border: 3px solid yellow;
+            border-top: 15px solid yellow;
+        }
+        .inventory-item.tier-3 { 
+            border: 3px solid blue;
+            border-top: 15px solid blue;
+        }
+        .inventory-item.tier-4 { 
+            border: 3px solid cyan;
+            border-top: 15px solid cyan;
+        }
+        .inventory-item.tier-5 { 
+            border: 3px solid orange;
+            border-top: 15px solid orange;
+        }
+        .inventory-item.tier-6 { 
+            border: 3px solid pink;
+            border-top: 15px solid pink;
+        }
+        .inventory-item.tier-7 { 
+            border: 3px solid lime;
+            border-top: 15px solid lime;
+        }
         .inventory-item.tier-8 { 
-            border: 2px solid;
+            border: 3px solid;
+            border-top: 15px solid;
             border-image: linear-gradient(90deg, gray, white, gray) 1;
             animation: spin-gradient 2s linear infinite;
         }
         .inventory-item.tier-9 { 
-            border: 2px solid;
+            border: 3px solid;
+            border-top: 15px solid;
             border-image: linear-gradient(90deg, #FFFF00, white, #FFFF00) 1;
             animation: spin-gradient 2s linear infinite;
         }
         .inventory-item.tier-10 { 
-            border: 2px solid;
+            border: 3px solid;
+            border-top: 15px solid;
             border-image: linear-gradient(90deg, purple, violet, purple, violet) 1;
             animation: spin-gradient 1s linear infinite;
         }
         .inventory-item.tier-11 { 
-            border: 2px solid;
+            border: 3px solid;
+            border-top: 15px solid;
             border-image: linear-gradient(90deg, red, black, red) 1;
+        }
+        
+        .tier-name {
+            position: absolute;
+            top: -17px;
+            left: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            background: inherit;
+            padding: 0 5px;
+            color: inherit;
+            text-transform: uppercase;
+        }
+        
+        .tier-stars {
+            position: absolute;
+            bottom: -10px;
+            right: 10px;
+            font-size: 9px;
+            color: gold;
+            background: rgba(0,0,0,0.7);
+            padding: 1px 4px;
+            border-radius: 3px;
         }
         
         @keyframes spin-gradient {
@@ -546,6 +595,17 @@
         .completionist-rank {
             color: #00ffff !important;
         }
+        .poly-squared-rank {
+            color: #FF00FF !important;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
         .tickets-upgrades {
             background: #f9f9f9;
             padding: 15px;
@@ -569,14 +629,14 @@
             text-align: center;
         }
         .wheel {
-            width: 150px;
-            height: 150px;
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
             border: 5px solid #ff69b4;
             margin: 15px auto;
             position: relative;
             overflow: hidden;
-            transition: transform 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .wheel-segment {
             position: absolute;
@@ -587,20 +647,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            color: white;
+            font-size: 11px;
+            color: black;
             text-align: center;
+            font-weight: bold;
         }
         .wheel-pointer {
             position: absolute;
-            top: -10px;
+            top: -15px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 15px solid #ff4444;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 20px solid #ff4444;
             z-index: 10;
         }
     </style>
@@ -690,6 +751,12 @@
                 <div class="upgrade-info">status: <span id="spinnerStatus">locked</span></div>
                 <div class="upgrade-info">effect: unlock enchant spinner</div>
                 <button onclick="buySpinner()" id="spinnerBtn" disabled>buy (cost: <span id="spinnerCost">10</span> tickets)</button>
+            </div>
+            <div class="upgrade-box">
+                <div class="upgrade-title">ticket production</div>
+                <div class="upgrade-info">level: <span id="ticketProdLevel">0</span>/2</div>
+                <div class="upgrade-info">effect: +1 ticket per minute</div>
+                <button onclick="buyTicketProduction()" id="ticketProdBtn">buy (cost: <span id="ticketProdCost">50</span> tickets)</button>
             </div>
             
             <div class="spinner-section" id="spinnerSection" style="display: none;">
@@ -889,7 +956,8 @@
             { name: 'poly', chance: 500000 },
             { name: 'everlasting', chance: 575265 },
             { name: 'solar', chance: 100000 },
-            { name: 'Completionist', chance: 1000000 }
+            { name: 'Completionist', chance: 1000000 },
+            { name: 'poly²', chance: 333333 } // Added poly²
         ];
 
         const ENCHANT_TYPES = [
@@ -918,20 +986,22 @@
             { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
             { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 },
             { name: 'overtime', type: 'overtime', baseLuck: 0.001, baseSpeed: 0.001, baseVariant: 0.001, baseSecret: 0.001, 
-              currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725, priority: 1 }
+              currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725, priority: 1 },
+            { name: 'polys blessing', type: 'blessing', value: 0, color: '#FFD700', chance: 1/500000, priority: 5 },
+            { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 }
         ];
 
-        // SPINNER REWARDS - FIXED WITH PROPER WEIGHTS
+        // SPINNER REWARDS - FIXED AND ORGANIZED
         const SPINNER_REWARDS = [
-            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 128 },
-            { name: 'speed iii', type: 'speed', value: 0.75, color: '#0066cc', weight: 64 },
-            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', weight: 32 },
-            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', weight: 16 },
-            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', weight: 8 },
-            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', weight: 4 },
-            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', weight: 2 },
-            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', weight: 1 },
-            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', weight: 1 }
+            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 40 },
+            { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', weight: 35 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', weight: 20 },
+            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', weight: 15 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', weight: 10 },
+            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', weight: 8 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', weight: 5 },
+            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', weight: 2 },
+            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', weight: 1 }
         ];
 
         // game state
@@ -955,6 +1025,8 @@
         let variantLuckLevel = 0;
         let variantLuckCost = 50;
         let minSpeedUpgrades = 0;
+        let ticketProdLevel = 0;
+        let ticketProdCost = 50;
         let spinnerUnlocked = false;
         let isRolling = false;
         let isAutorolling = false;
@@ -1035,6 +1107,7 @@
         function getRNGColor(rng, rankName) {
             if (rankName === 'solar') return 'orange';
             if (rankName === 'Completionist') return '#00ffff';
+            if (rankName === 'poly²') return '#FF00FF';
             if (rng < 1000) return '#aad7e6';
             if (rng < 10000) return '#ffc0cb';
             if (rng < 100000) return '#90ee90';
@@ -1054,17 +1127,17 @@
         }
 
         function getInventoryTier(finalRng) {
-            if (finalRng >= 1 && finalRng < 1000) return { stars: 1, color: 'white' };
-            if (finalRng < 10000) return { stars: 2, color: 'yellow' };
-            if (finalRng < 100000) return { stars: 3, color: 'blue' };
-            if (finalRng < 1000000) return { stars: 4, color: 'cyan' };
-            if (finalRng < 100000000) return { stars: 5, color: 'orange' };
-            if (finalRng < 1000000000) return { stars: 6, color: 'pink' };
-            if (finalRng < 100000000000) return { stars: 7, color: 'lime' };
-            if (finalRng < 1000000000000) return { stars: 8, color: 'gray-white-gradient' };
-            if (finalRng < 1e15) return { stars: 9, color: 'yellow-white-gradient' }; // 1 trillion to 1 quadrillion
-            if (finalRng < 1e18) return { stars: 10, color: 'purple-violet-gradient' }; // 1 quadrillion to 1 quintillion
-            return { stars: 11, color: 'red-black-gradient' }; // 1 quintillion+
+            if (finalRng >= 1 && finalRng < 1000) return { stars: 1, name: 'Common', color: 'white' };
+            if (finalRng < 10000) return { stars: 2, name: 'Decent', color: 'yellow' };
+            if (finalRng < 100000) return { stars: 3, name: 'Rare', color: 'blue' };
+            if (finalRng < 1000000) return { stars: 4, name: 'Good', color: 'cyan' };
+            if (finalRng < 100000000) return { stars: 5, name: 'Unordinary', color: 'orange' };
+            if (finalRng < 1000000000) return { stars: 6, name: 'DAMN', color: 'pink' };
+            if (finalRng < 100000000000) return { stars: 7, name: 'Insane', color: 'lime' };
+            if (finalRng < 1000000000000) return { stars: 8, name: 'How', color: 'gray-white-gradient' };
+            if (finalRng < 1e15) return { stars: 9, name: 'DAWG', color: 'yellow-white-gradient' };
+            if (finalRng < 1e18) return { stars: 10, name: 'Lol', color: 'purple-violet-gradient' };
+            return { stars: 11, name: 'STOP', color: 'red-black-gradient' };
         }
 
         function calculateRNG() {
@@ -1087,6 +1160,7 @@
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'luck') total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.25, stars);
+                if (enchant.type === 'delta') total += applyStarBonus(2.5, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(10, stars);
@@ -1109,6 +1183,7 @@
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'secret') total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.5, stars);
+                if (enchant.type === 'delta') total += applyStarBonus(5, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(25, stars);
@@ -1129,6 +1204,7 @@
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'speed') total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars);
+                if (enchant.type === 'delta') total -= applyStarBonus(0.5, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.25, stars);
                     else if (enchant.value === 2) total += applyStarBonus(0.5, stars);
@@ -1151,6 +1227,7 @@
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'variant') total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.125, stars);
+                if (enchant.type === 'delta') total += applyStarBonus(1.25, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(2.5, stars);
@@ -1216,7 +1293,7 @@
             return VARIANTS[0];
         }
 
-        function checkSecret(baseRng) {
+        function checkSecret(baseRng, hasPolyBlessing) {
             const secretLuck = secretLevel * 0.2 + getTotalEnchantSecret();
             const random = Math.random();
             
@@ -1227,6 +1304,11 @@
                     allNormalRanksDiscovered = false;
                     break;
                 }
+            }
+            
+            // Check for poly² if player has polys blessing equipped
+            if (hasPolyBlessing && random <= 1/333333) {
+                return 'poly²';
             }
             
             // FIXED: Solar only replaces eclipse (250-500 RNG)
@@ -1241,8 +1323,8 @@
             }
             
             for (let i = SECRETS.length - 1; i >= 0; i--) {
-                // Skip Completionist and solar if we already handled them
-                if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar') continue;
+                // Skip Completionist, solar and poly² if we already handled them
+                if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar' || SECRETS[i].name === 'poly²') continue;
                 
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
@@ -1253,7 +1335,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -1263,10 +1345,25 @@
             const generated = {};
             const enchantLuck = getTotalEnchantLuckBonus();
             
-            // Check for alpha first (special handling)
+            // Check for delta first (higher priority than alpha)
+            const deltaChance = ENCHANT_TYPES.find(e => e.name === 'delta').chance * (1 + enchantLuck);
+            let hasDelta = false;
+            if (Math.random() <= deltaChance) {
+                hasDelta = true;
+                const deltaEnchant = ENCHANT_TYPES.find(e => e.name === 'delta');
+                generated['delta'] = {
+                    name: deltaEnchant.name,
+                    type: deltaEnchant.type,
+                    value: deltaEnchant.value,
+                    color: deltaEnchant.color,
+                    priority: deltaEnchant.priority
+                };
+            }
+            
+            // Check for alpha if no delta
             const alphaChance = ENCHANT_TYPES.find(e => e.name === 'alpha').chance * (1 + enchantLuck);
             let hasAlpha = false;
-            if (Math.random() <= alphaChance) {
+            if (!hasDelta && Math.random() <= alphaChance) {
                 hasAlpha = true;
                 const alphaEnchant = ENCHANT_TYPES.find(e => e.name === 'alpha');
                 generated['alpha'] = {
@@ -1278,11 +1375,11 @@
                 };
             }
             
-            // Generate other enchants (skip if alpha overrides them)
+            // Generate other enchants (skip if alpha or delta overrides them)
             ENCHANT_TYPES.forEach(enchant => {
-                if (enchant.name === 'alpha') return;
+                if (enchant.name === 'alpha' || enchant.name === 'delta') return;
                 
-                if (hasAlpha && shouldOverrideEnchant(enchant.name)) {
+                if ((hasAlpha || hasDelta) && shouldOverrideEnchant(enchant.name)) {
                     return;
                 }
                 
@@ -1461,9 +1558,12 @@
                 resultEl.classList.add('solar-rank');
             } else if (rankName === 'Completionist') {
                 resultEl.classList.add('completionist-rank');
+            } else if (rankName === 'poly²') {
+                resultEl.classList.add('poly-squared-rank');
             } else {
                 resultEl.classList.remove('solar-rank');
                 resultEl.classList.remove('completionist-rank');
+                resultEl.classList.remove('poly-squared-rank');
             }
         }
 
@@ -1601,17 +1701,27 @@
                 
                 for (let i = 0; i < totalRollers; i++) {
                     let baseRng = calculateRNG();
-                    let secret = checkSecret(baseRng);
                     
-                    // FIXED: Solar multiplier only applies when secret is solar
-                    if (secret === 'solar') {
+                    // Check if player has polys blessing equipped
+                    const hasPolyBlessing = equippedOrb && equippedOrb.enchants && 
+                        equippedOrb.enchants.some(e => e.name === 'polys blessing');
+                    
+                    let secret = checkSecret(baseRng, hasPolyBlessing);
+                    
+                    // Handle special secrets
+                    if (secret === 'poly²') {
+                        finalRng = -2932932; // Special value for poly²
+                        baseRng = -2932932;
+                    } else if (secret === 'solar') {
                         baseRng *= 100000;
                     } else if (secret === 'Completionist') {
                         baseRng = -500;
                     }
                     
                     const variant = getVariant();
-                    const finalRng = secret === 'Completionist' ? -500 : baseRng * variant.multipliesRNG;
+                    const finalRng = secret === 'Completionist' ? -500 : 
+                                   secret === 'poly²' ? -2932932 : 
+                                   baseRng * variant.multipliesRNG;
                     
                     if (finalRng > maxRoll) maxRoll = finalRng;
                     
@@ -1621,12 +1731,12 @@
                     discovered.ranks.add(rankName);
                     if (secret) discovered.secrets.add(secret);
                     
-                    const gain = secret === 'Completionist' ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
+                    const gain = (secret === 'Completionist' || secret === 'poly²') ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
                     rollCoins += 1;
                     totalRolls++;
                     
-                    if (finalRng > bestRoll && secret !== 'Completionist') {
+                    if (finalRng > bestRoll && secret !== 'Completionist' && secret !== 'poly²') {
                         bestRoll = finalRng;
                     }
                     
@@ -1782,6 +1892,16 @@
             saveGame();
         }
 
+        function buyTicketProduction() {
+            if (ticketProdLevel >= 2 || tickets < ticketProdCost) return;
+            tickets -= ticketProdCost;
+            ticketProdLevel++;
+            ticketProdCost *= 10;
+            startTicketTimer(); // Restart timer with new rate
+            updateUI();
+            saveGame();
+        }
+
         function buySpinner() {
             if (spinnerUnlocked || tickets < 10) return;
             tickets -= 10;
@@ -1797,7 +1917,7 @@
             const wheel = document.getElementById('spinnerWheel');
             wheel.innerHTML = '<div class="wheel-pointer"></div>';
             
-            // Calculate total weight for proper distribution
+            // Calculate total weight
             const totalWeight = SPINNER_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
             let startAngle = 0;
             
@@ -1807,8 +1927,18 @@
                 segment.className = 'wheel-segment';
                 segment.style.backgroundColor = reward.color;
                 segment.style.transform = `rotate(${startAngle}deg)`;
-                segment.style.clipPath = `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.cos((segmentAngle * Math.PI) / 180)}% ${50 - 50 * Math.sin((segmentAngle * Math.PI) / 180)}%)`;
-                segment.innerHTML = `<div style="transform: rotate(${segmentAngle/2}deg) translate(30px) rotate(-${segmentAngle/2}deg); font-size: 8px;">${reward.name}</div>`;
+                
+                // Create text element that will be properly rotated
+                const textDiv = document.createElement('div');
+                textDiv.textContent = reward.name;
+                textDiv.style.transform = `rotate(${segmentAngle/2}deg) translate(70px) rotate(-${segmentAngle/2}deg)`;
+                textDiv.style.fontSize = '11px';
+                textDiv.style.fontWeight = 'bold';
+                textDiv.style.color = 'black';
+                textDiv.style.textAlign = 'center';
+                textDiv.style.width = '40px';
+                
+                segment.appendChild(textDiv);
                 wheel.appendChild(segment);
                 startAngle += segmentAngle;
             });
@@ -1825,9 +1955,9 @@
             resultDiv.textContent = 'Spinning...';
             
             const wheel = document.getElementById('spinnerWheel');
-            const spinDuration = 2000 + Math.random() * 1000;
+            const spinDuration = 3000 + Math.random() * 1000;
             const spins = 5 + Math.random() * 3;
-            const totalRotation = 360 * spins;
+            const totalRotation = 360 * spins + Math.random() * 360;
             
             wheel.style.transition = `transform ${spinDuration}ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
             wheel.style.transform = `rotate(${totalRotation}deg)`;
@@ -1842,16 +1972,19 @@
                 // Find which segment the pointer is pointing to
                 let cumulativeAngle = 0;
                 let winningIndex = 0;
+                let segmentAngles = [];
                 
-                for (let i = 0; i < SPINNER_REWARDS.length; i++) {
-                    const segmentAngle = (SPINNER_REWARDS[i].weight / totalWeight) * 360;
-                    cumulativeAngle += segmentAngle;
-                    
-                    // The pointer is at the top (0 degrees), so we need to check if normalizedRotation
-                    // falls within this segment when looking from the pointer's perspective
-                    const pointerAngle = (360 - normalizedRotation) % 360;
-                    
-                    if (pointerAngle < cumulativeAngle) {
+                // Calculate segment angles
+                SPINNER_REWARDS.forEach(reward => {
+                    segmentAngles.push((reward.weight / totalWeight) * 360);
+                });
+                
+                // The pointer is at the top (0 degrees), so we need to check from 360 backwards
+                const pointerAngle = (360 - normalizedRotation + 360) % 360;
+                
+                for (let i = 0; i < segmentAngles.length; i++) {
+                    cumulativeAngle += segmentAngles[i];
+                    if (pointerAngle <= cumulativeAngle) {
                         winningIndex = i;
                         break;
                     }
@@ -1937,13 +2070,14 @@
                 const tierClass = `tier-${tier.stars}`;
                 
                 return `
-                    <div class="inventory-item ${tierClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'Completionist' ? 'completionist-rank' : ''}">
+                    <div class="inventory-item ${tierClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : ''}">
+                        <div class="tier-name">${tier.name}</div>
+                        <div class="tier-stars">${tier.stars}★</div>
                         <div>
                             <span class="inventory-rng" style="${style}">${formatNumber(item.finalRng)}</span>
                             <div class="inventory-details">${item.rank} - ${item.variant} (x${formatNumber(Math.round(item.finalRng/item.baseRng))})</div>
                             ${starsHTML}
                             ${enchantsHTML}
-                            <div style="font-size: 10px; color: #999;">Tier ${tier.stars}★</div>
                         </div>
                         <button class="decline-btn" onclick="deleteInventoryItem(${index})" style="padding: 5px 15px; font-size: 12px;">delete</button>
                     </div>
@@ -2012,6 +2146,13 @@
                 const variant = applyStarBonus(0.125, stars);
                 return `+${luck.toFixed(2)} luck, -${speed.toFixed(2)}s speed, +${secret.toFixed(2)} secret, +${variant.toFixed(3)} variant${starBonus}`;
             }
+            if (enchant.type === 'delta') {
+                const luck = applyStarBonus(2.5, stars);
+                const speed = applyStarBonus(0.5, stars);
+                const secret = applyStarBonus(5, stars);
+                const variant = applyStarBonus(1.25, stars);
+                return `+${luck.toFixed(2)} luck, -${speed.toFixed(2)}s speed, +${secret.toFixed(2)} secret, +${variant.toFixed(3)} variant (alpha x10)${starBonus}`;
+            }
             if (enchant.type === 'weird') {
                 const val = applyStarBonus(enchant.value, stars);
                 return `+${val.toFixed(2)} enchant luck${starBonus}`;
@@ -2023,6 +2164,9 @@
                 const secret = applyStarBonus(enchant.currentSecret, stars);
                 const rolls = (enchant.rollsWithOvertime || 0);
                 return `+${luck.toFixed(3)} luck, +${speed.toFixed(3)}s speed, +${variant.toFixed(3)} variant, +${secret.toFixed(3)} secret (${rolls} rolls)${starBonus}`;
+            }
+            if (enchant.type === 'blessing') {
+                return `1/333,333 chance for poly² (RNG: -2,932,932)${starBonus}`;
             }
             return '';
         }
@@ -2149,24 +2293,27 @@
             
             mergeBtn.disabled = false;
             
-            // Check if both orbs have alpha enchants
+            // Check if both orbs have alpha/delta enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
+            const deltaCount1 = orb1.enchants.filter(e => e.name === 'delta').length;
+            const deltaCount2 = orb2.enchants.filter(e => e.name === 'delta').length;
             
             // Combine enchants
             const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
             
-            // Handle alpha stacking
+            // Handle alpha/delta stacking
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
-            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
+            const deltaEnchants = combinedEnchants.filter(e => e.name === 'delta');
+            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             // Remove overridden enchants
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing'];
             
-            if (alphaEnchants.length > 0) {
-                // Add all alphas
-                finalEnchants.push(...alphaEnchants);
+            if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
+                // Add all alphas and deltas
+                finalEnchants.push(...alphaEnchants, ...deltaEnchants);
                 
                 // Add non-overridden enchants
                 otherEnchants.forEach(enchant => {
@@ -2181,8 +2328,8 @@
             // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
-            // Determine if result should be locked (NOT locked if both have alpha)
-            const shouldBeLocked = !(alphaCount1 > 0 && alphaCount2 > 0);
+            // Determine if result should be locked (NOT locked if both have alpha or delta)
+            const shouldBeLocked = !((alphaCount1 > 0 && alphaCount2 > 0) || (deltaCount1 > 0 && deltaCount2 > 0));
             
             preview.innerHTML = `
                 <strong>Merge Preview:</strong><br>
@@ -2206,24 +2353,27 @@
             
             rollCoins -= 500;
             
-            // Check if both orbs have alpha enchants
+            // Check if both orbs have alpha/delta enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
+            const deltaCount1 = orb1.enchants.filter(e => e.name === 'delta').length;
+            const deltaCount2 = orb2.enchants.filter(e => e.name === 'delta').length;
             
             // Combine enchants
             const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
             
-            // Handle alpha stacking
+            // Handle alpha/delta stacking
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
-            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha');
+            const deltaEnchants = combinedEnchants.filter(e => e.name === 'delta');
+            const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             // Remove overridden enchants
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing'];
             
-            if (alphaEnchants.length > 0) {
-                // Add all alphas
-                finalEnchants.push(...alphaEnchants);
+            if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
+                // Add all alphas and deltas
+                finalEnchants.push(...alphaEnchants, ...deltaEnchants);
                 
                 // Add non-overridden enchants
                 otherEnchants.forEach(enchant => {
@@ -2253,8 +2403,8 @@
             // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
-            // Determine if result should be locked (NOT locked if both have alpha)
-            const shouldBeLocked = !(alphaCount1 > 0 && alphaCount2 > 0);
+            // Determine if result should be locked (NOT locked if both have alpha or delta)
+            const shouldBeLocked = !((alphaCount1 > 0 && alphaCount2 > 0) || (deltaCount1 > 0 && deltaCount2 > 0));
             
             // Create new merged orb
             const mergedOrb = {
@@ -2312,6 +2462,7 @@
                 let specialNote = '';
                 if (s.name === 'solar') specialNote = ' (replaces eclipse, x100,000)';
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
+                if (s.name === 'poly²') specialNote = ' (requires polys blessing, true RNG 1/333,333, RNG: -2,932,932)';
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${formatNumber(s.chance)}${specialNote}</div>`;
             }).join('');
             document.getElementById('secretRanksIndexItems').innerHTML = secretsHTML;
@@ -2328,8 +2479,10 @@
                 if (enchant.type === 'variant') effect = `+${enchant.value} variant luck`;
                 if (enchant.type === 'addition') effect = `+${enchant.value} bulk roll`;
                 if (enchant.type === 'alpha') effect = `+0.25 luck, -0.05s speed, +0.5 secret, +0.125 variant`;
+                if (enchant.type === 'delta') effect = `+2.5 luck, -0.5s speed, +5 secret, +1.25 variant (alpha x10)`;
                 if (enchant.type === 'weird') effect = `+${enchant.value} enchant luck`;
                 if (enchant.type === 'overtime') effect = `+0.001 luck, +0.001s speed, +0.001 variant, +0.001 secret (grows per roll)`;
+                if (enchant.type === 'blessing') effect = `1/333,333 chance for poly² (RNG: -2,932,932)`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant, +1 bulk';
                     else if (enchant.value === 2) effect = '+10 luck, +0.5s speed, +25 secret, +2.5 variant, +2 bulk';
@@ -2396,6 +2549,10 @@
             document.getElementById('minSpeedCost').textContent = formatNumber(5);
             document.getElementById('minSpeedBtn').disabled = minSpeedUpgrades >= 4 || tickets < 5;
             
+            document.getElementById('ticketProdLevel').textContent = formatNumber(ticketProdLevel);
+            document.getElementById('ticketProdCost').textContent = formatNumber(ticketProdCost);
+            document.getElementById('ticketProdBtn').disabled = ticketProdLevel >= 2 || tickets < ticketProdCost;
+            
             document.getElementById('spinnerStatus').textContent = spinnerUnlocked ? 'unlocked' : 'locked';
             document.getElementById('spinnerCost').textContent = formatNumber(10);
             document.getElementById('spinnerBtn').disabled = spinnerUnlocked || tickets < 10;
@@ -2405,8 +2562,9 @@
 
         function startTicketTimer() {
             if (ticketInterval) clearInterval(ticketInterval);
+            const ticketsPerMinute = 1 + ticketProdLevel;
             ticketInterval = setInterval(() => {
-                tickets++;
+                tickets += ticketsPerMinute;
                 updateUI();
                 saveGame();
             }, 60000); // 1 minute
@@ -2434,6 +2592,8 @@
                     variantLuckLevel,
                     variantLuckCost,
                     minSpeedUpgrades,
+                    ticketProdLevel,
+                    ticketProdCost,
                     spinnerUnlocked,
                     cooldownThreshold,
                     cooldownTime,
@@ -2570,6 +2730,8 @@
                     variantLuckLevel = saveData.variantLuckLevel || 0;
                     variantLuckCost = saveData.variantLuckCost || 50;
                     minSpeedUpgrades = saveData.minSpeedUpgrades || 0;
+                    ticketProdLevel = saveData.ticketProdLevel || 0;
+                    ticketProdCost = saveData.ticketProdCost || 50;
                     spinnerUnlocked = saveData.spinnerUnlocked || false;
                     
                     cooldownThreshold = saveData.cooldownThreshold || 0;
