@@ -707,7 +707,8 @@
             { name: 'spectral', chance: 50, multipliesRNG: 50 },
             { name: 'divine', chance: 100, multipliesRNG: 100 },
             { name: 'chromatic', chance: 250, multipliesRNG: 250 },
-            { name: 'inverted', chance: 500, multipliesRNG: 500 }
+            { name: 'inverted', chance: 500, multipliesRNG: 500 },
+            { name: 'defined', chance: 1000, multipliesRNG: 1000 }
         ];
 
         const RANKS = [
@@ -726,7 +727,15 @@
             { name: 'zeta', min: 500000, max: 1000000 },
             { name: 'fantasy', min: 1000000, max: 2015510 },
             { name: 'giant', min: 2015510, max: 5000000 },
-            { name: 'ultimate', min: 5000000, max: Infinity }
+            { name: 'ultimate', min: 5000000, max: 1e7 },
+            { name: 'apex', min: 1e7, max: 2.5e7 },
+            { name: 'mega', min: 2.5e7, max: 7.5e7 },
+            { name: 'insane', min: 7.5e7, max: 1e8 },
+            { name: 'colossal', min: 1e8, max: 5e8 },
+            { name: 'microscopic', min: 5e8, max: 1e9 },
+            { name: 'hyper', min: 1e9, max: 1e10 },
+            { name: 'insurmountable', min: 1e10, max 1e15 },
+            { name: 'impossible', min: 1e15, max: Infinity }
         ];
 
         const SECRETS = [
@@ -738,7 +747,10 @@
             { name: 'defined', chance: 10000 },
             { name: '?!?!?', chance: 25000 },
             { name: 'nil', chance: 50000 },
-            { name: 'impossible', chance: 100000 },
+            { name: 'infinity', chance: 100000 },
+            { name: 'imaginary', chance: 250000 },
+            { name: ' ', chance: 1/500000 },
+            { name: 'everlasting', chance: 575265 },
             { name: 'solar', chance: 100000 }
         ];
 
