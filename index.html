@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>polys silly rngame</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Oswald:wght@400;700&family=Orbitron:wght@400;700&family=Shadows+Into+Light&family=Balthazar&family=Righteous&family=Amatic+SC:wght@400;700&family=Rubik+Mono+One&family=Gloria+Hallelujah&family=Kaushan+Script&display=swap" rel="stylesheet">
+    
     <style>
         body {
             margin: 0;
@@ -152,13 +158,15 @@
             border-radius: 15px;
             padding: 20px;
             border: 3px solid #ff69b4;
+            height: 140px; /* Fixed height for roller */
+            overflow: hidden;
         }
         
         .roller-viewport {
             width: 100%;
+            height: 100%;
             overflow-x: auto;
             overflow-y: hidden;
-            padding: 10px 0;
             scrollbar-width: thin;
             scrollbar-color: #ff69b4 #f0f0f0;
         }
@@ -181,7 +189,9 @@
             display: flex;
             gap: 10px;
             min-width: min-content;
+            height: 100%;
             padding: 10px 0;
+            align-items: center;
         }
         
         .slot {
@@ -201,7 +211,21 @@
             flex-shrink: 0;
             position: relative;
             overflow: hidden;
+            font-family: Arial, sans-serif; /* Default font */
         }
+        
+        /* Rank-specific fonts */
+        .slot.font-fantasy { font-family: 'Roboto Mono', monospace; }
+        .slot.font-giant { font-family: 'Oswald', sans-serif; }
+        .slot.font-ultimate { font-family: 'Orbitron', sans-serif; }
+        .slot.font-apex { font-family: 'Shadows Into Light', cursive; }
+        .slot.font-omega { font-family: 'Balthazar', serif; }
+        .slot.font-insane { font-family: monospace; }
+        .slot.font-colossal { font-family: 'Righteous', cursive; }
+        .slot.font-gargantuan { font-family: 'Amatic SC', cursive; }
+        .slot.font-hyper { font-family: 'Rubik Mono One', monospace; }
+        .slot.font-insurmountable { font-family: 'Gloria Hallelujah', cursive; }
+        .slot.font-infinity { font-family: 'Kaushan Script', cursive; }
         
         .slot:hover {
             transform: translateY(-2px);
@@ -215,14 +239,12 @@
             box-shadow: 0 0 15px rgba(255, 105, 180, 0.4);
         }
         
-        .slot.rolling {
-            animation: slotRoll 0.1s infinite;
-        }
-        
         .slot-value {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 4px;
+            transition: all 0.3s;
+            text-align: center;
         }
         
         .slot-variant {
@@ -288,12 +310,6 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-        }
-        
-        @keyframes slotRoll {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0); }
         }
         
         .accept-btn {
@@ -564,7 +580,22 @@
             padding: 3px 0;
             border-bottom: 1px solid #eee;
             text-transform: lowercase;
+            font-family: Arial, sans-serif;
         }
+        
+        /* Index rank fonts */
+        .index-item.rank-fantasy { font-family: 'Roboto Mono', monospace; }
+        .index-item.rank-giant { font-family: 'Oswald', sans-serif; }
+        .index-item.rank-ultimate { font-family: 'Orbitron', sans-serif; }
+        .index-item.rank-apex { font-family: 'Shadows Into Light', cursive; }
+        .index-item.rank-omega { font-family: 'Balthazar', serif; }
+        .index-item.rank-insane { font-family: monospace; }
+        .index-item.rank-colossal { font-family: 'Righteous', cursive; }
+        .index-item.rank-gargantuan { font-family: 'Amatic SC', cursive; }
+        .index-item.rank-hyper { font-family: 'Rubik Mono One', monospace; }
+        .index-item.rank-insurmountable { font-family: 'Gloria Hallelujah', cursive; }
+        .index-item.rank-infinity { font-family: 'Kaushan Script', cursive; }
+        
         .equip-btn {
             background: #90ee90;
             color: black;
@@ -736,6 +767,21 @@
         
         body.dark-mode .selected-slot-info div {
             background: #444;
+        }
+        
+        /* Secret rank display styles */
+        .slot-value.secret-display {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .roll-indicator {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 10px;
+            color: #ff69b4;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -1020,7 +1066,7 @@
             { name: 'gargantuan', min: 777777777, max: 1e9 },
             { name: 'hyper', min: 1e9, max: 1e12 },
             { name: 'insurmountable', min: 1e12, max: 1e15 },
-            { name: '(INFINITUDE)', min: 1e15, max: Infinity }
+            { name: '(infinitude)', min: 1e15, max: Infinity }
         ];
 
         const SECRETS = [
@@ -1136,6 +1182,59 @@
         let pauseSecretRarityThreshold = 0;
         let pauseEnchantRarityThreshold = 0;
         let overtimeRolls = {}; // Track rolls per overtime enchant
+        let rollNumber = 0; // Track current roll number
+
+        // Get font for rank name
+        function getRankFont(rankName) {
+            switch(rankName.toLowerCase()) {
+                case 'fantasy': return 'font-fantasy';
+                case 'giant': return 'font-giant';
+                case 'ultimate': return 'font-ultimate';
+                case 'apex': return 'font-apex';
+                case 'omega': return 'font-omega';
+                case 'insane': return 'font-insane';
+                case 'colossal': return 'font-colossal';
+                case 'gargantuan': return 'font-gargantuan';
+                case 'hyper': return 'font-hyper';
+                case 'insurmountable': return 'font-insurmountable';
+                case '(infinitude)': return 'font-infinity';
+                default: return '';
+            }
+        }
+
+        // Get index font class for rank name
+        function getIndexRankFont(rankName) {
+            switch(rankName.toLowerCase()) {
+                case 'fantasy': return 'rank-fantasy';
+                case 'giant': return 'rank-giant';
+                case 'ultimate': return 'rank-ultimate';
+                case 'apex': return 'rank-apex';
+                case 'omega': return 'rank-omega';
+                case 'insane': return 'rank-insane';
+                case 'colossal': return 'rank-colossal';
+                case 'gargantuan': return 'rank-gargantuan';
+                case 'hyper': return 'rank-hyper';
+                case 'insurmountable': return 'rank-insurmountable';
+                case '(infinitude)': return 'rank-infinity';
+                default: return '';
+            }
+        }
+
+        // Get display text for high RNG values
+        function getRNGDisplayText(rng, isSecret = false, secretChance = 0) {
+            // For secrets with chance >= 1e6, always show ????? in roller
+            if (isSecret && secretChance >= 1e6) {
+                return "?????";
+            }
+            
+            if (rng >= 1e21) return "!?WTF?!";
+            if (rng >= 1e18) return "how";
+            if (rng >= 1e15) return "?!?!?";
+            if (rng >= 1e12) return "!";
+            if (rng >= 1e9) return "?????";
+            if (rng >= 1e6) return "???";
+            return null;
+        }
 
         // Dark mode toggle
         function toggleDarkMode() {
@@ -1384,7 +1483,7 @@
         function getTotalBulkRolls() {
             let total = Math.min(bulkLevel, 100);
             
-            if (!equippedOrb) return total;
+            if (!equippedOrb) return total; // FIXED: Remove x10 multiplier
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'addition') total += enchant.value;
@@ -1397,7 +1496,7 @@
                 }
             });
             
-            return Math.min(total, 100);
+            return Math.min(total, 100); // FIXED: Remove x10 multiplier
         }
 
         function getRank(rng) {
@@ -1569,15 +1668,16 @@
         function updateSlots() {
             const container = document.getElementById('slotsContainer');
             container.innerHTML = '';
-            const totalRollers = getTotalBulkRolls();
-            pendingRolls = new Array(totalRollers).fill(null);
+            const totalSlots = getTotalBulkRolls() * 10; // FIXED: x10 slots for display only
+            pendingRolls = new Array(totalSlots).fill(null);
             
-            for (let i = 0; i < totalRollers; i++) {
+            for (let i = 0; i < totalSlots; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
                 slot.id = `slot-${i}`;
                 slot.dataset.index = i;
                 slot.innerHTML = `
+                    <div class="roll-indicator">${i + 1}</div>
                     <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
                 `;
@@ -1643,55 +1743,51 @@
             detailsContainer.style.display = 'block';
         }
 
-        function animateSlots() {
-            const slots = document.querySelectorAll('.slot');
-            slots.forEach(slot => {
-                slot.classList.add('rolling');
-                const valueEl = slot.querySelector('.slot-value');
-                const variantEl = slot.querySelector('.slot-variant');
-                
-                // Show random numbers during animation
-                let count = 0;
-                const maxCount = 20;
-                const interval = setInterval(() => {
-                    count++;
-                    const randomRNG = Math.floor(Math.random() ** (-1.3) * 100);
-                    valueEl.textContent = formatNumber(randomRNG);
-                    
-                    if (count >= maxCount) {
-                        clearInterval(interval);
-                        slot.classList.remove('rolling');
-                    }
-                }, 50);
-            });
-        }
-
-        function displaySlot(index, baseRng, finalRng, rankName, variantName, generatedEnchants, stars) {
+        function displaySlot(index, baseRng, finalRng, rankName, variantName, generatedEnchants, stars, isSecret = false, secretChance = 0) {
             const slot = document.getElementById(`slot-${index}`);
             if (!slot) return;
             
             const valueEl = slot.querySelector('.slot-value');
             const variantEl = slot.querySelector('.slot-variant');
             
-            valueEl.textContent = formatNumber(finalRng);
+            // Get display text for high RNG values or secrets
+            const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
+            if (displayText) {
+                valueEl.textContent = displayText;
+                valueEl.className = 'slot-value secret-display';
+            } else {
+                valueEl.textContent = formatNumber(finalRng);
+                valueEl.className = 'slot-value';
+            }
+            
+            // Apply rank font
+            const fontClass = getRankFont(rankName);
+            slot.className = 'slot ' + fontClass;
+            
             variantEl.textContent = variantName;
             variantEl.style.display = 'block';
             
             // Add star indicator
             if (stars && stars > 0) {
-                const starIndicator = document.createElement('div');
-                starIndicator.className = 'slot-stars';
+                let starIndicator = slot.querySelector('.slot-stars');
+                if (!starIndicator) {
+                    starIndicator = document.createElement('div');
+                    starIndicator.className = 'slot-stars';
+                    slot.appendChild(starIndicator);
+                }
                 starIndicator.textContent = '⭐'.repeat(stars);
-                slot.appendChild(starIndicator);
             }
             
             // Add enchant indicator if any
             if (generatedEnchants && generatedEnchants.length > 0) {
-                const enchantIndicator = document.createElement('div');
-                enchantIndicator.className = 'slot-enchant';
+                let enchantIndicator = slot.querySelector('.slot-enchant');
+                if (!enchantIndicator) {
+                    enchantIndicator = document.createElement('div');
+                    enchantIndicator.className = 'slot-enchant';
+                    slot.appendChild(enchantIndicator);
+                }
                 enchantIndicator.textContent = '+E';
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
-                slot.appendChild(enchantIndicator);
             }
             
             const color = getRNGColor(finalRng, rankName);
@@ -1724,7 +1820,19 @@
                 return;
             }
             
-            inventory.unshift(pendingRolls[index]);
+            // Check if we're accepting more than we should (only accept based on actual bulk rolls)
+            const actualBulkRolls = getTotalBulkRolls();
+            const acceptedCount = inventory.filter(item => item.rollNumber === rollNumber).length;
+            
+            if (acceptedCount >= actualBulkRolls) {
+                alert(`You can only accept ${actualBulkRolls} rolls per bulk roll!`);
+                return;
+            }
+            
+            inventory.unshift({
+                ...pendingRolls[index],
+                rollNumber: rollNumber
+            });
             
             // Create enchant orb if there are ANY enchants, even without stars
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
@@ -1763,6 +1871,7 @@
             const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
+                    <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #90ee90;">✓</div>
                     <div class="slot-variant" style="display: none;"></div>
                 `;
@@ -1791,6 +1900,7 @@
             const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
+                    <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #ff4444;">✗</div>
                     <div class="slot-variant" style="display: none;"></div>
                 `;
@@ -1852,13 +1962,15 @@
             isRolling = true;
             document.getElementById('rollBtn').disabled = true;
             
-            // Reset all slots
+            // Reset all slots to show roll indicators
             const slots = document.querySelectorAll('.slot');
-            slots.forEach(slot => {
+            slots.forEach((slot, i) => {
                 slot.innerHTML = `
+                    <div class="roll-indicator">${i + 1}</div>
                     <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
                 `;
+                slot.className = 'slot'; // Reset font class
                 slot.classList.remove('selected');
                 // Remove any existing star/enchant indicators
                 const starIndicator = slot.querySelector('.slot-stars');
@@ -1871,20 +1983,24 @@
             document.getElementById('selectedSlotDetails').style.display = 'none';
             selectedSlotIndex = -1;
             
-            animateSlots();
-            
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
             const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
             const rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
             
+            // Increment roll number
+            rollNumber++;
+            
             setTimeout(() => {
-                const totalRollers = getTotalBulkRolls();
+                const totalDisplaySlots = getTotalBulkRolls() * 10; // Display slots
+                const actualBulkRolls = getTotalBulkRolls(); // Actual rolls to generate
                 let maxRoll = 0;
                 let foundSecretToPause = false;
                 let foundEnchantToPause = false;
                 
-                for (let i = 0; i < totalRollers; i++) {
+                // Generate only the actual number of rolls we should have
+                const generatedRolls = [];
+                for (let i = 0; i < actualBulkRolls; i++) {
                     let baseRng = calculateRNG();
                     
                     // Check if player has polys blessing equipped
@@ -1892,6 +2008,11 @@
                         equippedOrb.enchants.some(e => e.name === 'polys blessing');
                     
                     let secret = checkSecret(baseRng, hasPolyBlessing);
+                    let secretChance = 0;
+                    if (secret) {
+                        const secretObj = SECRETS.find(s => s.name === secret);
+                        secretChance = secretObj ? secretObj.chance : 0;
+                    }
                     
                     // Handle special secrets
                     if (secret === 'poly²') {
@@ -1957,17 +2078,19 @@
                     }
                     
                     const stars = generatedEnchants.length > 0 ? generateStars(true) : 0;
-                    displaySlot(i, baseRng, finalRng, rankName, variant.name, generatedEnchants, stars);
                     
-                    pendingRolls[i] = {
+                    generatedRolls.push({
                         baseRng: baseRng,
                         finalRng: finalRng,
                         rank: rankName,
                         variant: variant.name,
                         enchants: generatedEnchants,
                         stars: stars,
-                        timestamp: Date.now()
-                    };
+                        timestamp: Date.now(),
+                        rollNumber: rollNumber,
+                        isSecret: !!secret,
+                        secretChance: secretChance
+                    });
                     
                     // Check for pause conditions
                     pauseRNGThreshold = parseFloat(document.getElementById('pauseRNG').value) || 0;
@@ -1997,6 +2120,20 @@
                         if (secretObj && secretObj.chance >= pauseSecretRarityThreshold) {
                             foundSecretToPause = true;
                         }
+                    }
+                }
+                
+                // Distribute generated rolls across display slots
+                pendingRolls = new Array(totalDisplaySlots).fill(null);
+                for (let i = 0; i < totalDisplaySlots; i++) {
+                    const rollIndex = i % generatedRolls.length;
+                    const rollData = generatedRolls[rollIndex];
+                    
+                    if (rollData) {
+                        pendingRolls[i] = rollData;
+                        displaySlot(i, rollData.baseRng, rollData.finalRng, rollData.rank, 
+                                  rollData.variant, rollData.enchants, rollData.stars, 
+                                  rollData.isSecret, rollData.secretChance);
                     }
                 }
                 
@@ -2123,7 +2260,7 @@
                 segment.style.transform = `rotate(${startAngle}deg)`;
                 segment.style.clipPath = `polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 50%)`;
                 
-                // Create text element that will be properly rotated
+                // Create text element
                 const textDiv = document.createElement('div');
                 textDiv.textContent = reward.name;
                 textDiv.style.transform = `rotate(${segmentAngle/2}deg) translate(60px) rotate(-${segmentAngle/2}deg)`;
@@ -2135,6 +2272,7 @@
                 textDiv.style.height = '20px';
                 textDiv.style.lineHeight = '20px';
                 textDiv.style.overflow = 'hidden';
+                textDiv.style.whiteSpace = 'nowrap';
                 
                 segment.appendChild(textDiv);
                 wheel.appendChild(segment);
@@ -2648,7 +2786,8 @@
                 const icon = isDiscovered ? '✓' : '✗';
                 const style = isDiscovered ? 'color: #90ee90;' : 'color: #ff6666;';
                 const maxDisplay = r.max === Infinity ? '∞' : formatNumber(r.max);
-                return `<div class="index-item"><span style="${style}">${icon}</span> ${r.name}: ${formatNumber(r.min)} - ${maxDisplay}</div>`;
+                const fontClass = getIndexRankFont(r.name);
+                return `<div class="index-item ${fontClass}"><span style="${style}">${icon}</span> ${r.name}: ${formatNumber(r.min)} - ${maxDisplay}</div>`;
             }).join('');
             document.getElementById('normalRanksIndexItems').innerHTML = normalRanksHTML;
             
@@ -2661,6 +2800,7 @@
                 if (s.name === 'solar') specialNote = ' (replaces eclipse, x100,000)';
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
                 if (s.name === 'poly²') specialNote = ' (requires polys blessing, true RNG 1/333,333, RNG: -2,932,932)';
+                // Show actual name in index, not ????
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${formatNumber(s.chance)}${specialNote}</div>`;
             }).join('');
             document.getElementById('secretRanksIndexItems').innerHTML = secretsHTML;
