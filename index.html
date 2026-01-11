@@ -165,14 +165,17 @@
         .roller-viewport {
             width: 100%;
             height: 100%;
-            overflow-x: auto;
+            overflow-x: scroll; /* Changed from auto to scroll */
             overflow-y: hidden;
             scrollbar-width: thin;
             scrollbar-color: #ff69b4 #f0f0f0;
         }
         
+        /* Always show scrollbar */
         .roller-viewport::-webkit-scrollbar {
             height: 8px;
+            display: block !important;
+            visibility: visible !important;
         }
         
         .roller-viewport::-webkit-scrollbar-track {
@@ -783,6 +786,37 @@
             color: #ff69b4;
             font-weight: bold;
         }
+        
+        /* FIXED: Slot buttons container - always visible */
+        .slot-buttons {
+            position: absolute;
+            bottom: 2px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            padding: 2px;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid #ddd;
+        }
+        
+        .slot-btn {
+            font-size: 8px;
+            padding: 1px 3px;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        .slot-accept-btn {
+            background: #90ee90;
+            color: black;
+        }
+        
+        .slot-decline-btn {
+            background: #ff4444;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -851,7 +885,7 @@
 
         <!-- NEW ROLLER CONTAINER -->
         <div class="roller-container">
-            <div class="roller-viewport">
+            <div class="roller-viewport" id="rollerViewport">
                 <div class="slots-container" id="slotsContainer">
                     <!-- Slots will be generated here -->
                 </div>
@@ -862,7 +896,7 @@
         </div>
 
         <div class="button-container">
-            <button onclick="performRoll()" id="rollBtn">roll</button>
+            <button onclick="roll()" id="rollBtn">roll</button>
         </div>
 
         <div class="tickets-upgrades">
@@ -1017,11 +1051,6 @@
     </div>
 
     <script>
-        // Fix: Changed roll function name to performRoll to avoid conflict
-        function performRoll() {
-            roll();
-        }
-
         // Helper function to format numbers
         function formatNumber(num) {
             if (num >= 1e9) {
@@ -1090,7 +1119,7 @@
             { name: 'everlasting', chance: 575265750 },
             { name: 'solar', chance: 100000 },
             { name: 'Completionist', chance: 1000000 },
-            { name: 'poly²', chance: 333333 } // Added poly²
+            { name: 'poly²', chance: 333333 }
         ];
 
         const ENCHANT_TYPES = [
@@ -1124,7 +1153,7 @@
             { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 }
         ];
 
-        // SPINNER REWARDS - FIXED AND ORGANIZED
+        // SPINNER REWARDS
         const SPINNER_REWARDS = [
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 40 },
             { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', weight: 35 },
@@ -1181,8 +1210,8 @@
         let pauseRNGThreshold = 0;
         let pauseSecretRarityThreshold = 0;
         let pauseEnchantRarityThreshold = 0;
-        let overtimeRolls = {}; // Track rolls per overtime enchant
-        let rollNumber = 0; // Track current roll number
+        let overtimeRolls = {};
+        let rollNumber = 0;
 
         // Get font for rank name
         function getRankFont(rankName) {
@@ -1222,7 +1251,6 @@
 
         // Get display text for high RNG values
         function getRNGDisplayText(rng, isSecret = false, secretChance = 0) {
-            // For secrets with chance >= 1e6, always show ????? in roller
             if (isSecret && secretChance >= 1e6) {
                 return "?????";
             }
@@ -1356,13 +1384,12 @@
                 if (enchant.type === 'greed') total -= applyStarBonus(20, stars);
                 if (enchant.type === 'patience') total += applyStarBonus(100, stars);
                 if (enchant.type === 'overtime') {
-                    // NERFED: Apply overtime nerf based on rolls
                     const rolls = (enchant.rollsWithOvertime || 0);
                     let factor = 1.0;
-                    if (rolls >= 10000) factor = 0.0001; // 99.99% worse
-                    else if (rolls >= 7500) factor = 0.25; // 75% worse
-                    else if (rolls >= 5000) factor = 0.5; // 50% worse
-                    else if (rolls >= 1000) factor = 0.75; // 25% worse
+                    if (rolls >= 10000) factor = 0.0001;
+                    else if (rolls >= 7500) factor = 0.25;
+                    else if (rolls >= 5000) factor = 0.5;
+                    else if (rolls >= 1000) factor = 0.75;
                     
                     total += applyStarBonus(enchant.currentLuck * factor, stars);
                 }
@@ -1387,7 +1414,6 @@
                     else if (enchant.value === 3) total += applyStarBonus(125, stars);
                 }
                 if (enchant.type === 'overtime') {
-                    // NERFED: Apply overtime nerf based on rolls
                     const rolls = (enchant.rollsWithOvertime || 0);
                     let factor = 1.0;
                     if (rolls >= 10000) factor = 0.0001;
@@ -1420,7 +1446,6 @@
                 if (enchant.type === 'greed') total -= applyStarBonus(0.7, stars);
                 if (enchant.type === 'patience') total -= applyStarBonus(25, stars);
                 if (enchant.type === 'overtime') {
-                    // NERFED: Apply overtime nerf based on rolls
                     const rolls = (enchant.rollsWithOvertime || 0);
                     let factor = 1.0;
                     if (rolls >= 10000) factor = 0.0001;
@@ -1452,7 +1477,6 @@
                 }
                 if (enchant.type === 'patience') total += applyStarBonus(5, stars);
                 if (enchant.type === 'overtime') {
-                    // NERFED: Apply overtime nerf based on rolls
                     const rolls = (enchant.rollsWithOvertime || 0);
                     let factor = 1.0;
                     if (rolls >= 10000) factor = 0.0001;
@@ -1483,7 +1507,7 @@
         function getTotalBulkRolls() {
             let total = Math.min(bulkLevel, 100);
             
-            if (!equippedOrb) return total; // FIXED: Remove x10 multiplier
+            if (!equippedOrb) return total;
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'addition') total += enchant.value;
@@ -1496,7 +1520,7 @@
                 }
             });
             
-            return Math.min(total, 100); // FIXED: Remove x10 multiplier
+            return Math.min(total, 100);
         }
 
         function getRank(rng) {
@@ -1524,7 +1548,6 @@
             const secretLuck = secretLevel * 0.2 + getTotalEnchantSecret();
             const random = Math.random();
             
-            // Check if all normal ranks are discovered for Completionist
             let allNormalRanksDiscovered = true;
             for (const rank of RANKS) {
                 if (!discovered.ranks.has(rank.name)) {
@@ -1533,24 +1556,20 @@
                 }
             }
             
-            // Check for poly² if player has polys blessing equipped
             if (hasPolyBlessing && random <= 1/333333) {
                 return 'poly²';
             }
             
-            // FIXED: Solar only replaces eclipse (250-500 RNG)
             const currentRank = getRank(baseRng);
             if (currentRank === 'eclipse' && random <= 1/100000) {
                 return 'solar';
             }
             
-            // Special handling for Completionist - always rollable when all normal ranks discovered
             if (allNormalRanksDiscovered && random <= 1/1000000) {
                 return 'Completionist';
             }
             
             for (let i = SECRETS.length - 1; i >= 0; i--) {
-                // Skip Completionist, solar and poly² if we already handled them
                 if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar' || SECRETS[i].name === 'poly²') continue;
                 
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
@@ -1572,7 +1591,6 @@
             const generated = {};
             const enchantLuck = getTotalEnchantLuckBonus();
             
-            // Check for delta first (higher priority than alpha)
             const deltaChance = ENCHANT_TYPES.find(e => e.name === 'delta').chance * (1 + enchantLuck);
             let hasDelta = false;
             if (Math.random() <= deltaChance) {
@@ -1587,7 +1605,6 @@
                 };
             }
             
-            // Check for alpha if no delta
             const alphaChance = ENCHANT_TYPES.find(e => e.name === 'alpha').chance * (1 + enchantLuck);
             let hasAlpha = false;
             if (!hasDelta && Math.random() <= alphaChance) {
@@ -1602,7 +1619,6 @@
                 };
             }
             
-            // Generate other enchants (skip if alpha or delta overrides them)
             ENCHANT_TYPES.forEach(enchant => {
                 if (enchant.name === 'alpha' || enchant.name === 'delta') return;
                 
@@ -1613,7 +1629,6 @@
                 const adjustedChance = enchant.chance * (1 + enchantLuck);
                 if (Math.random() <= adjustedChance) {
                     if (enchant.name === 'overtime') {
-                        // Create a deep copy for overtime to track its own stats
                         generated['overtime'] = {
                             name: enchant.name,
                             type: enchant.type,
@@ -1668,7 +1683,7 @@
         function updateSlots() {
             const container = document.getElementById('slotsContainer');
             container.innerHTML = '';
-            const totalSlots = getTotalBulkRolls() * 10; // FIXED: x10 slots for display only
+            const totalSlots = getTotalBulkRolls() * 10;
             pendingRolls = new Array(totalSlots).fill(null);
             
             for (let i = 0; i < totalSlots; i++) {
@@ -1680,6 +1695,10 @@
                     <div class="roll-indicator">${i + 1}</div>
                     <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-buttons">
+                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${i})">✓</button>
+                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${i})">✗</button>
+                    </div>
                 `;
                 slot.onclick = () => selectSlot(i);
                 container.appendChild(slot);
@@ -1687,12 +1706,10 @@
         }
 
         function selectSlot(index) {
-            // Remove selected class from all slots
             document.querySelectorAll('.slot').forEach(slot => {
                 slot.classList.remove('selected');
             });
             
-            // Add selected class to clicked slot
             const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.classList.add('selected');
@@ -1750,7 +1767,6 @@
             const valueEl = slot.querySelector('.slot-value');
             const variantEl = slot.querySelector('.slot-variant');
             
-            // Get display text for high RNG values or secrets
             const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
             if (displayText) {
                 valueEl.textContent = displayText;
@@ -1760,14 +1776,12 @@
                 valueEl.className = 'slot-value';
             }
             
-            // Apply rank font
             const fontClass = getRankFont(rankName);
             slot.className = 'slot ' + fontClass;
             
             variantEl.textContent = variantName;
             variantEl.style.display = 'block';
             
-            // Add star indicator
             if (stars && stars > 0) {
                 let starIndicator = slot.querySelector('.slot-stars');
                 if (!starIndicator) {
@@ -1778,7 +1792,6 @@
                 starIndicator.textContent = '⭐'.repeat(stars);
             }
             
-            // Add enchant indicator if any
             if (generatedEnchants && generatedEnchants.length > 0) {
                 let enchantIndicator = slot.querySelector('.slot-enchant');
                 if (!enchantIndicator) {
@@ -1820,7 +1833,6 @@
                 return;
             }
             
-            // Check if we're accepting more than we should (only accept based on actual bulk rolls)
             const actualBulkRolls = getTotalBulkRolls();
             const acceptedCount = inventory.filter(item => item.rollNumber === rollNumber).length;
             
@@ -1834,7 +1846,6 @@
                 rollNumber: rollNumber
             });
             
-            // Create enchant orb if there are ANY enchants, even without stars
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
                 const stars = pendingRolls[index].stars || 0;
                 const orb = {
@@ -1867,20 +1878,22 @@
                 enchantOrbs.push(orb);
             }
             
-            // Clear the slot
             const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #90ee90;">✓</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-buttons">
+                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${index})">✓</button>
+                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${index})">✗</button>
+                    </div>
                 `;
                 slot.classList.remove('selected');
             }
             
             pendingRolls[index] = null;
             
-            // Hide details if this was the selected slot
             if (selectedSlotIndex === index) {
                 document.getElementById('selectedSlotDetails').style.display = 'none';
                 selectedSlotIndex = -1;
@@ -1896,20 +1909,22 @@
         function declineRoll(index) {
             if (!pendingRolls[index]) return;
             
-            // Clear the slot
             const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #ff4444;">✗</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-buttons">
+                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${index})">✓</button>
+                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${index})">✗</button>
+                    </div>
                 `;
                 slot.classList.remove('selected');
             }
             
             pendingRolls[index] = null;
             
-            // Hide details if this was the selected slot
             if (selectedSlotIndex === index) {
                 document.getElementById('selectedSlotDetails').style.display = 'none';
                 selectedSlotIndex = -1;
@@ -1937,7 +1952,6 @@
         function equipEnchantOrb(index) {
             equippedOrb = enchantOrbs[index];
             
-            // Initialize overtime rolls tracking if not exists
             if (!equippedOrb.rollsWithOvertime) {
                 equippedOrb.rollsWithOvertime = 0;
             }
@@ -1962,24 +1976,25 @@
             isRolling = true;
             document.getElementById('rollBtn').disabled = true;
             
-            // Reset all slots to show roll indicators
             const slots = document.querySelectorAll('.slot');
             slots.forEach((slot, i) => {
                 slot.innerHTML = `
                     <div class="roll-indicator">${i + 1}</div>
                     <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-buttons">
+                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${i})">✓</button>
+                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${i})">✗</button>
+                    </div>
                 `;
-                slot.className = 'slot'; // Reset font class
+                slot.className = 'slot';
                 slot.classList.remove('selected');
-                // Remove any existing star/enchant indicators
                 const starIndicator = slot.querySelector('.slot-stars');
                 if (starIndicator) starIndicator.remove();
                 const enchantIndicator = slot.querySelector('.slot-enchant');
                 if (enchantIndicator) enchantIndicator.remove();
             });
             
-            // Hide details
             document.getElementById('selectedSlotDetails').style.display = 'none';
             selectedSlotIndex = -1;
             
@@ -1988,22 +2003,19 @@
             const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
             const rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
             
-            // Increment roll number
             rollNumber++;
             
             setTimeout(() => {
-                const totalDisplaySlots = getTotalBulkRolls() * 10; // Display slots
-                const actualBulkRolls = getTotalBulkRolls(); // Actual rolls to generate
+                const totalDisplaySlots = getTotalBulkRolls() * 10;
+                const actualBulkRolls = getTotalBulkRolls();
                 let maxRoll = 0;
                 let foundSecretToPause = false;
                 let foundEnchantToPause = false;
                 
-                // Generate only the actual number of rolls we should have
                 const generatedRolls = [];
                 for (let i = 0; i < actualBulkRolls; i++) {
                     let baseRng = calculateRNG();
                     
-                    // Check if player has polys blessing equipped
                     const hasPolyBlessing = equippedOrb && equippedOrb.enchants && 
                         equippedOrb.enchants.some(e => e.name === 'polys blessing');
                     
@@ -2014,9 +2026,8 @@
                         secretChance = secretObj ? secretObj.chance : 0;
                     }
                     
-                    // Handle special secrets
                     if (secret === 'poly²') {
-                        finalRng = -2932932; // Special value for poly²
+                        finalRng = -2932932;
                         baseRng = -2932932;
                     } else if (secret === 'solar') {
                         baseRng *= 100000;
@@ -2049,17 +2060,14 @@
                     const generatedEnchants = generateEnchants(baseRng);
                     generatedEnchants.forEach(e => discovered.enchants.add(e.name));
                     
-                    // Update Overtime enchant if equipped
                     if (equippedOrb && equippedOrb.enchants) {
                         equippedOrb.enchants.forEach(enchant => {
                             if (enchant.type === 'overtime') {
-                                // Increment rolls counter
                                 if (!equippedOrb.rollsWithOvertime) {
                                     equippedOrb.rollsWithOvertime = 0;
                                 }
                                 equippedOrb.rollsWithOvertime++;
                                 
-                                // NERFED: Apply overtime nerf based on rolls
                                 const rolls = equippedOrb.rollsWithOvertime;
                                 let factor = 1.0;
                                 if (rolls >= 10000) factor = 0.0001;
@@ -2067,7 +2075,6 @@
                                 else if (rolls >= 5000) factor = 0.5;
                                 else if (rolls >= 1000) factor = 0.75;
                                 
-                                // Increase all stats by 0.001 * factor
                                 const increment = 0.001 * factor;
                                 enchant.currentLuck += increment;
                                 enchant.currentSpeed += increment;
@@ -2092,12 +2099,10 @@
                         secretChance: secretChance
                     });
                     
-                    // Check for pause conditions
                     pauseRNGThreshold = parseFloat(document.getElementById('pauseRNG').value) || 0;
                     pauseSecretRarityThreshold = parseFloat(document.getElementById('pauseSecretRarity').value) || 0;
                     pauseEnchantRarityThreshold = parseFloat(document.getElementById('pauseEnchantRarity').value) || 0;
                     
-                    // Check enchant rarity for pause
                     if (pauseEnchantRarityThreshold > 0 && generatedEnchants.length > 0) {
                         generatedEnchants.forEach(enchant => {
                             const enchantType = ENCHANT_TYPES.find(e => e.name === enchant.name);
@@ -2123,7 +2128,6 @@
                     }
                 }
                 
-                // Distribute generated rolls across display slots
                 pendingRolls = new Array(totalDisplaySlots).fill(null);
                 for (let i = 0; i < totalDisplaySlots; i++) {
                     const rollIndex = i % generatedRolls.length;
@@ -2135,6 +2139,17 @@
                                   rollData.variant, rollData.enchants, rollData.stars, 
                                   rollData.isSecret, rollData.secretChance);
                     }
+                }
+                
+                // Auto-scroll to middle slot
+                const viewport = document.getElementById('rollerViewport');
+                const middleSlotIndex = Math.floor(totalDisplaySlots / 2);
+                const middleSlot = document.getElementById(`slot-${middleSlotIndex}`);
+                if (viewport && middleSlot) {
+                    const slotLeft = middleSlot.offsetLeft;
+                    const viewportWidth = viewport.offsetWidth;
+                    const slotWidth = middleSlot.offsetWidth;
+                    viewport.scrollLeft = slotLeft - (viewportWidth / 2) + (slotWidth / 2);
                 }
                 
                 if (foundSecretToPause && isAutorolling) {
@@ -2228,7 +2243,7 @@
             tickets -= ticketProdCost;
             ticketProdLevel++;
             ticketProdCost *= 10;
-            startTicketTimer(); // Restart timer with new rate
+            startTicketTimer();
             updateUI();
             saveGame();
         }
@@ -2248,7 +2263,6 @@
             const wheel = document.getElementById('spinnerWheel');
             wheel.innerHTML = '<div class="wheel-pointer"></div>';
             
-            // Calculate total weight
             const totalWeight = SPINNER_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
             let startAngle = 0;
             
@@ -2260,7 +2274,6 @@
                 segment.style.transform = `rotate(${startAngle}deg)`;
                 segment.style.clipPath = `polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 50%)`;
                 
-                // Create text element
                 const textDiv = document.createElement('div');
                 textDiv.textContent = reward.name;
                 textDiv.style.transform = `rotate(${segmentAngle/2}deg) translate(60px) rotate(-${segmentAngle/2}deg)`;
@@ -2299,23 +2312,18 @@
             wheel.style.transform = `rotate(${totalRotation}deg)`;
             
             setTimeout(() => {
-                // Calculate total weight
                 const totalWeight = SPINNER_REWARDS.reduce((sum, reward) => sum + reward.weight, 0);
                 
-                // Normalize the rotation to 0-360
                 const normalizedRotation = totalRotation % 360;
                 
-                // Find which segment the pointer is pointing to
                 let cumulativeAngle = 0;
                 let winningIndex = 0;
                 let segmentAngles = [];
                 
-                // Calculate segment angles
                 SPINNER_REWARDS.forEach(reward => {
                     segmentAngles.push((reward.weight / totalWeight) * 360);
                 });
                 
-                // The pointer is at the top (0 degrees), so we need to check from 360 backwards
                 const pointerAngle = (360 - normalizedRotation + 360) % 360;
                 
                 for (let i = 0; i < segmentAngles.length; i++) {
@@ -2401,7 +2409,6 @@
                     ? `<div style="font-size: 11px; color: gold;">${'⭐'.repeat(item.stars)}</div>`
                     : '';
                 
-                // Apply inventory tier border
                 const tier = getInventoryTier(item.finalRng);
                 const tierClass = `tier-${tier.stars}`;
                 
@@ -2629,29 +2636,23 @@
             
             mergeBtn.disabled = false;
             
-            // Check if both orbs have alpha/delta enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
             const deltaCount1 = orb1.enchants.filter(e => e.name === 'delta').length;
             const deltaCount2 = orb2.enchants.filter(e => e.name === 'delta').length;
             
-            // Combine enchants
             const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
             
-            // Handle alpha/delta stacking
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
             const deltaEnchants = combinedEnchants.filter(e => e.name === 'delta');
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
-            // Remove overridden enchants
             const finalEnchants = [];
             const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
-                // Add all alphas and deltas
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
                 
-                // Add non-overridden enchants
                 otherEnchants.forEach(enchant => {
                     if (!shouldOverrideEnchant(enchant.name) || overrideExceptions.includes(enchant.name.toLowerCase())) {
                         finalEnchants.push(enchant);
@@ -2661,10 +2662,8 @@
                 finalEnchants.push(...combinedEnchants);
             }
             
-            // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
-            // Determine if result should be locked (NOT locked if both have alpha or delta)
             const shouldBeLocked = !((alphaCount1 > 0 && alphaCount2 > 0) || (deltaCount1 > 0 && deltaCount2 > 0));
             
             preview.innerHTML = `
@@ -2689,36 +2688,28 @@
             
             rollCoins -= 500;
             
-            // Check if both orbs have alpha/delta enchants
             const alphaCount1 = orb1.enchants.filter(e => e.name === 'alpha').length;
             const alphaCount2 = orb2.enchants.filter(e => e.name === 'alpha').length;
             const deltaCount1 = orb1.enchants.filter(e => e.name === 'delta').length;
             const deltaCount2 = orb2.enchants.filter(e => e.name === 'delta').length;
             
-            // Combine enchants
             const combinedEnchants = [...orb1.enchants, ...orb2.enchants];
             
-            // Handle alpha/delta stacking
             const alphaEnchants = combinedEnchants.filter(e => e.name === 'alpha');
             const deltaEnchants = combinedEnchants.filter(e => e.name === 'delta');
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
-            // Remove overridden enchants
             const finalEnchants = [];
             const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
-                // Add all alphas and deltas
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
                 
-                // Add non-overridden enchants
                 otherEnchants.forEach(enchant => {
                     if (!shouldOverrideEnchant(enchant.name) || overrideExceptions.includes(enchant.name.toLowerCase())) {
-                        // Special handling for overtime - combine rolls counter
                         if (enchant.type === 'overtime') {
                             const existingOvertime = finalEnchants.find(e => e.type === 'overtime');
                             if (existingOvertime) {
-                                // Average the stats
                                 existingOvertime.currentLuck = (existingOvertime.currentLuck + enchant.currentLuck) / 2;
                                 existingOvertime.currentSpeed = (existingOvertime.currentSpeed + enchant.currentSpeed) / 2;
                                 existingOvertime.currentVariant = (existingOvertime.currentVariant + enchant.currentVariant) / 2;
@@ -2736,13 +2727,10 @@
                 finalEnchants.push(...combinedEnchants);
             }
             
-            // Calculate average stars (rounded up)
             const avgStars = Math.ceil((orb1.stars + orb2.stars) / 2);
             
-            // Determine if result should be locked (NOT locked if both have alpha or delta)
             const shouldBeLocked = !((alphaCount1 > 0 && alphaCount2 > 0) || (deltaCount1 > 0 && deltaCount2 > 0));
             
-            // Create new merged orb
             const mergedOrb = {
                 id: Date.now() + Math.random(),
                 enchants: finalEnchants,
@@ -2753,7 +2741,6 @@
                 rollsWithOvertime: Math.max(orb1.rollsWithOvertime || 0, orb2.rollsWithOvertime || 0)
             };
             
-            // Delete the original orbs
             const higherIndex = Math.max(orb1Index, orb2Index);
             const lowerIndex = Math.min(orb1Index, orb2Index);
             
@@ -2771,7 +2758,6 @@
         }
 
         function updateIndex() {
-            // variants index
             const variantsHTML = VARIANTS.map(v => {
                 const isDiscovered = discovered.variants.has(v.name);
                 const icon = isDiscovered ? '✓' : '✗';
@@ -2780,7 +2766,6 @@
             }).join('');
             document.getElementById('variantsIndexItems').innerHTML = variantsHTML;
             
-            // normal ranks index
             const normalRanksHTML = RANKS.map(r => {
                 const isDiscovered = discovered.ranks.has(r.name) && !SECRETS.some(s => s.name === r.name);
                 const icon = isDiscovered ? '✓' : '✗';
@@ -2791,7 +2776,6 @@
             }).join('');
             document.getElementById('normalRanksIndexItems').innerHTML = normalRanksHTML;
             
-            // secret ranks index
             const secretsHTML = SECRETS.map(s => {
                 const isDiscovered = discovered.secrets.has(s.name);
                 const icon = isDiscovered ? '✓' : '✗';
@@ -2800,12 +2784,10 @@
                 if (s.name === 'solar') specialNote = ' (replaces eclipse, x100,000)';
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
                 if (s.name === 'poly²') specialNote = ' (requires polys blessing, true RNG 1/333,333, RNG: -2,932,932)';
-                // Show actual name in index, not ????
                 return `<div class="index-item"><span style="${style}">${icon}</span> ${s.name}: 1/${formatNumber(s.chance)}${specialNote}</div>`;
             }).join('');
             document.getElementById('secretRanksIndexItems').innerHTML = secretsHTML;
             
-            // enchants index
             const enchantsHTML = ENCHANT_TYPES.map(enchant => {
                 const isDiscovered = discovered.enchants.has(enchant.name);
                 const icon = isDiscovered ? '✓' : '✗';
@@ -2882,7 +2864,6 @@
             document.getElementById('variantLuckCost').textContent = formatNumber(variantLuckCost);
             document.getElementById('variantLuckBtn').disabled = variantLuckLevel >= 30 || polycoin < variantLuckCost;
             
-            // Ticket shop updates
             document.getElementById('minSpeedLevel').textContent = formatNumber(minSpeedUpgrades);
             document.getElementById('minSpeedCost').textContent = formatNumber(5);
             document.getElementById('minSpeedBtn').disabled = minSpeedUpgrades >= 4 || tickets < 5;
@@ -2905,7 +2886,7 @@
                 tickets += ticketsPerMinute;
                 updateUI();
                 saveGame();
-            }, 60000); // 1 minute
+            }, 60000);
         }
 
         function saveGame() {
@@ -3103,7 +3084,6 @@
                         if (equippedOrb.rollsWithOvertime === undefined) equippedOrb.rollsWithOvertime = 0;
                     }
                     
-                    // Start ticket timer if game loaded successfully
                     startTicketTimer();
                 }
             } catch (error) {
@@ -3131,11 +3111,9 @@
         updateIndex();
         updateMergeSelects();
         
-        // Make inventory and enchant sections open by default
         document.getElementById('inventoryContent').classList.add('open');
         document.getElementById('enchantsContent').classList.add('open');
         
-        // Initialize index sections as collapsed
         document.querySelectorAll('.index-items').forEach(el => {
             el.classList.add('collapsed');
         });
