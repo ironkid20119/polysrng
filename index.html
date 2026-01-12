@@ -162,14 +162,19 @@
             overflow: hidden;
         }
         
-        .roller-viewport {
-            width: 100%;
-            height: calc(100% - 60px); /* Reduced height to make room for buttons */
-            overflow-x: scroll;
-            overflow-y: hidden;
-            scrollbar-width: thin;
-            scrollbar-color: #ff69b4 #f0f0f0;
-        }
+.roller-viewport {
+    width: 100%;
+    height: calc(100% - 60px);
+    overflow-x: scroll;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #ff69b4 #f0f0f0;
+    cursor: grab;
+}
+
+.roller-viewport:active {
+    cursor: grabbing;
+}
         
         /* Always show scrollbar */
         .roller-viewport::-webkit-scrollbar {
