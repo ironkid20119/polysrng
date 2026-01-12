@@ -158,14 +158,14 @@
             border-radius: 15px;
             padding: 20px;
             border: 3px solid #ff69b4;
-            height: 140px; /* Fixed height for roller */
+            height: 200px;
             overflow: hidden;
         }
         
         .roller-viewport {
             width: 100%;
-            height: 100%;
-            overflow-x: scroll; /* Changed from auto to scroll */
+            height: calc(100% - 40px);
+            overflow-x: scroll;
             overflow-y: hidden;
             scrollbar-width: thin;
             scrollbar-color: #ff69b4 #f0f0f0;
@@ -197,6 +197,13 @@
             align-items: center;
         }
         
+        .slot-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
         .slot {
             width: 60px;
             height: 80px;
@@ -214,7 +221,7 @@
             flex-shrink: 0;
             position: relative;
             overflow: hidden;
-            font-family: Arial, sans-serif; /* Default font */
+            font-family: Arial, sans-serif;
         }
         
         /* Rank-specific fonts */
@@ -240,6 +247,10 @@
             border-color: #ff69b4;
             background: #fff5f9;
             box-shadow: 0 0 15px rgba(255, 105, 180, 0.4);
+        }
+        
+        .slot.acceptable {
+            border-color: #90ee90;
         }
         
         .slot-value {
@@ -315,6 +326,44 @@
             gap: 10px;
         }
         
+        .slot-buttons {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .slot-wrapper.acceptable .slot-buttons {
+            opacity: 1;
+        }
+        
+        .slot-accept-btn, .slot-decline-btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .slot-accept-btn {
+            background: #90ee90;
+            color: black;
+        }
+        
+        .slot-decline-btn {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .slot-accept-btn:hover, .slot-decline-btn:hover {
+            transform: scale(1.1);
+        }
+        
         .accept-btn {
             background: #90ee90;
             color: black;
@@ -336,10 +385,10 @@
             margin: 5px;
         }
         .accept-btn:hover {
-            background: #ff85c1;
+            background: #7cd87c;
         }
         .decline-btn:hover {
-            background: #ff6666;
+            background: #ff3333;
         }
         button {
             background: #666;
@@ -787,35 +836,32 @@
             font-weight: bold;
         }
         
-        /* FIXED: Slot buttons container - always visible */
-        .slot-buttons {
+        .animating {
+            animation: secret-reveal 0.5s ease-in-out;
+        }
+        
+        @keyframes secret-reveal {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Slot states */
+        .slot.unrolled {
+            color: #999;
+        }
+        
+        .slot.rolled {
+            transition: all 0.3s ease;
+        }
+        
+        .middle-indicator {
             position: absolute;
             bottom: 2px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 2px;
-            padding: 2px;
-            background: rgba(255, 255, 255, 0.9);
-            border-top: 1px solid #ddd;
-        }
-        
-        .slot-btn {
+            right: 2px;
             font-size: 8px;
-            padding: 1px 3px;
-            border: none;
-            border-radius: 2px;
-            cursor: pointer;
-        }
-        
-        .slot-accept-btn {
-            background: #90ee90;
-            color: black;
-        }
-        
-        .slot-decline-btn {
-            background: #ff4444;
-            color: white;
+            color: #90ee90;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -1212,6 +1258,8 @@
         let pauseEnchantRarityThreshold = 0;
         let overtimeRolls = {};
         let rollNumber = 0;
+        let currentRollAcceptedCount = 0;
+        let currentRollGeneratedRolls = [];
 
         // Get font for rank name
         function getRankFont(rankName) {
@@ -1636,10 +1684,10 @@
                             baseSpeed: enchant.baseSpeed,
                             baseVariant: enchant.baseVariant,
                             baseSecret: enchant.baseSecret,
-                            currentLuck: enchant.baseLuck,
-                            currentSpeed: enchant.baseSpeed,
-                            currentVariant: enchant.baseVariant,
-                            currentSecret: enchant.baseSecret,
+                            currentLuck: enchant.currentLuck,
+                            currentSpeed: enchant.currentSpeed,
+                            currentVariant: enchant.currentVariant,
+                            currentSecret: enchant.currentSecret,
                             color: enchant.color,
                             priority: enchant.priority
                         };
@@ -1687,21 +1735,32 @@
             pendingRolls = new Array(totalSlots).fill(null);
             
             for (let i = 0; i < totalSlots; i++) {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.id = `slot-${i}`;
-                slot.dataset.index = i;
-                slot.innerHTML = `
-                    <div class="roll-indicator">${i + 1}</div>
-                    <div class="slot-value">?</div>
-                    <div class="slot-variant" style="display: none;"></div>
+                const wrapper = document.createElement('div');
+                wrapper.className = 'slot-wrapper';
+                
+                // Determine if this is an acceptable slot (middle slot of each 10-slot group)
+                const isMiddleSlot = (i % 10 === 4); // 5th slot in each group (0-indexed: 4)
+                
+                wrapper.innerHTML = `
+                    <div class="slot unrolled ${isMiddleSlot ? 'acceptable' : ''}" id="slot-${i}" data-index="${i}" data-acceptable="${isMiddleSlot}">
+                        <div class="roll-indicator">${i + 1}</div>
+                        ${isMiddleSlot ? '<div class="middle-indicator">✓</div>' : ''}
+                        <div class="slot-value">?</div>
+                        <div class="slot-variant" style="display: none;"></div>
+                    </div>
                     <div class="slot-buttons">
-                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${i})">✓</button>
-                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${i})">✗</button>
+                        ${isMiddleSlot ? `
+                            <button class="slot-accept-btn" onclick="event.stopPropagation(); acceptRoll(${i})">✓</button>
+                            <button class="slot-decline-btn" onclick="event.stopPropagation(); declineRoll(${i})">✗</button>
+                        ` : ''}
                     </div>
                 `;
+                
+                // Add click handler for the slot itself
+                const slot = wrapper.querySelector('.slot');
                 slot.onclick = () => selectSlot(i);
-                container.appendChild(slot);
+                
+                container.appendChild(wrapper);
             }
         }
 
@@ -1728,6 +1787,9 @@
                 return;
             }
             
+            const slot = document.getElementById(`slot-${index}`);
+            const isAcceptable = slot.getAttribute('data-acceptable') === 'true';
+            
             const color = getRNGColor(roll.finalRng, roll.rank);
             let style = `color: ${color};`;
             if (color.includes('gradient')) {
@@ -1742,8 +1804,20 @@
                 ? `<div><strong>Stars:</strong> ${'⭐'.repeat(roll.stars)}</div>`
                 : '';
             
+            let actionButtons = '';
+            if (isAcceptable) {
+                actionButtons = `
+                    <div class="selected-slot-actions">
+                        <button class="accept-btn" onclick="acceptRoll(${index})">✓ Accept</button>
+                        <button class="decline-btn" onclick="declineRoll(${index})">✗ Decline</button>
+                    </div>
+                `;
+            } else {
+                actionButtons = `<div style="text-align: center; color: #666; padding: 10px;">This slot cannot be accepted (not a middle slot)</div>`;
+            }
+            
             detailsContainer.innerHTML = `
-                <div class="selected-slot-title">Slot ${index + 1} Details</div>
+                <div class="selected-slot-title">Slot ${index + 1} Details ${isAcceptable ? '✓' : ''}</div>
                 <div class="selected-slot-info">
                     <div><strong>RNG:</strong> <span style="${style}">${formatNumber(roll.finalRng)}</span></div>
                     <div><strong>Rank:</strong> <span class="${roll.rank === 'solar' ? 'solar-rank' : roll.rank === 'Completionist' ? 'completionist-rank' : roll.rank === 'poly²' ? 'poly-squared-rank' : ''}">${roll.rank}</span></div>
@@ -1752,10 +1826,7 @@
                 </div>
                 ${enchantsHTML}
                 ${starsHTML}
-                <div class="selected-slot-actions">
-                    <button class="accept-btn" onclick="acceptRoll(${index})">✓ Accept</button>
-                    <button class="decline-btn" onclick="declineRoll(${index})">✗ Decline</button>
-                </div>
+                ${actionButtons}
             `;
             detailsContainer.style.display = 'block';
         }
@@ -1767,6 +1838,7 @@
             const valueEl = slot.querySelector('.slot-value');
             const variantEl = slot.querySelector('.slot-variant');
             
+            // First, show the placeholder text
             const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
             if (displayText) {
                 valueEl.textContent = displayText;
@@ -1777,7 +1849,7 @@
             }
             
             const fontClass = getRankFont(rankName);
-            slot.className = 'slot ' + fontClass;
+            slot.className = 'slot ' + fontClass + ' rolled';
             
             variantEl.textContent = variantName;
             variantEl.style.display = 'block';
@@ -1803,28 +1875,67 @@
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
             }
             
-            const color = getRNGColor(finalRng, rankName);
-            if (color.includes('gradient')) {
-                valueEl.style.background = color;
-                valueEl.style.webkitBackgroundClip = 'text';
-                valueEl.style.webkitTextFillColor = 'transparent';
-                valueEl.style.backgroundClip = 'text';
+            // If it's a secret display text, animate it first
+            if (displayText && displayText !== formatNumber(finalRng)) {
+                valueEl.classList.add('animating');
+                
+                setTimeout(() => {
+                    valueEl.classList.remove('animating');
+                    valueEl.textContent = isSecret ? rankName : formatNumber(finalRng);
+                    
+                    const color = getRNGColor(finalRng, rankName);
+                    if (color.includes('gradient')) {
+                        valueEl.style.background = color;
+                        valueEl.style.webkitBackgroundClip = 'text';
+                        valueEl.style.webkitTextFillColor = 'transparent';
+                        valueEl.style.backgroundClip = 'text';
+                    } else {
+                        valueEl.style.background = 'none';
+                        valueEl.style.webkitTextFillColor = 'inherit';
+                        valueEl.style.color = color;
+                    }
+                    
+                    if (rankName === 'solar') {
+                        valueEl.classList.add('solar-rank');
+                    } else if (rankName === 'Completionist') {
+                        valueEl.classList.add('completionist-rank');
+                    } else if (rankName === 'poly²') {
+                        valueEl.classList.add('poly-squared-rank');
+                    }
+                }, 500);
             } else {
-                valueEl.style.background = 'none';
-                valueEl.style.webkitTextFillColor = 'inherit';
-                valueEl.style.color = color;
-            }
-            
-            if (rankName === 'solar') {
-                valueEl.classList.add('solar-rank');
-            } else if (rankName === 'Completionist') {
-                valueEl.classList.add('completionist-rank');
-            } else if (rankName === 'poly²') {
-                valueEl.classList.add('poly-squared-rank');
+                const color = getRNGColor(finalRng, rankName);
+                if (color.includes('gradient')) {
+                    valueEl.style.background = color;
+                    valueEl.style.webkitBackgroundClip = 'text';
+                    valueEl.style.webkitTextFillColor = 'transparent';
+                    valueEl.style.backgroundClip = 'text';
+                } else {
+                    valueEl.style.background = 'none';
+                    valueEl.style.webkitTextFillColor = 'inherit';
+                    valueEl.style.color = color;
+                }
+                
+                if (rankName === 'solar') {
+                    valueEl.classList.add('solar-rank');
+                } else if (rankName === 'Completionist') {
+                    valueEl.classList.add('completionist-rank');
+                } else if (rankName === 'poly²') {
+                    valueEl.classList.add('poly-squared-rank');
+                }
             }
         }
 
         function acceptRoll(index) {
+            const slot = document.getElementById(`slot-${index}`);
+            if (!slot) return;
+            
+            const isAcceptable = slot.getAttribute('data-acceptable') === 'true';
+            if (!isAcceptable) {
+                alert('This slot cannot be accepted! Only middle slots (marked with ✓) can be accepted.');
+                return;
+            }
+            
             if (!pendingRolls[index]) return;
             
             const maxSlots = 10 + invLevel;
@@ -1834,16 +1945,34 @@
             }
             
             const actualBulkRolls = getTotalBulkRolls();
-            const acceptedCount = inventory.filter(item => item.rollNumber === rollNumber).length;
             
-            if (acceptedCount >= actualBulkRolls) {
+            // Count how many unique rolls from this roll batch have been accepted
+            const uniqueRollIndices = new Set();
+            inventory.forEach(item => {
+                if (item.rollNumber === rollNumber) {
+                    uniqueRollIndices.add(item.generatedIndex);
+                }
+            });
+            
+            if (uniqueRollIndices.size >= actualBulkRolls) {
                 alert(`You can only accept ${actualBulkRolls} rolls per bulk roll!`);
                 return;
             }
             
+            // Get the generated index for this slot
+            const generatedIndex = Math.floor(index / 10);
+            
+            // Check if this specific generated roll has already been accepted
+            if (uniqueRollIndices.has(generatedIndex)) {
+                alert('This specific roll has already been accepted from this batch!');
+                return;
+            }
+            
+            // Add to inventory
             inventory.unshift({
                 ...pendingRolls[index],
-                rollNumber: rollNumber
+                rollNumber: rollNumber,
+                generatedIndex: generatedIndex
             });
             
             if (pendingRolls[index].enchants && pendingRolls[index].enchants.length > 0) {
@@ -1878,18 +2007,24 @@
                 enchantOrbs.push(orb);
             }
             
-            const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #90ee90;">✓</div>
                     <div class="slot-variant" style="display: none;"></div>
-                    <div class="slot-buttons">
-                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${index})">✓</button>
-                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${index})">✗</button>
-                    </div>
                 `;
                 slot.classList.remove('selected');
+                slot.classList.remove('rolled');
+            }
+            
+            // Disable the buttons for this slot
+            const wrapper = slot.closest('.slot-wrapper');
+            if (wrapper) {
+                const buttons = wrapper.querySelector('.slot-buttons');
+                if (buttons) {
+                    buttons.style.opacity = '0.5';
+                    buttons.style.pointerEvents = 'none';
+                }
             }
             
             pendingRolls[index] = null;
@@ -1907,20 +2042,35 @@
         }
 
         function declineRoll(index) {
+            const slot = document.getElementById(`slot-${index}`);
+            if (!slot) return;
+            
+            const isAcceptable = slot.getAttribute('data-acceptable') === 'true';
+            if (!isAcceptable) {
+                alert('This slot cannot be declined! Only middle slots (marked with ✓) can be declined.');
+                return;
+            }
+            
             if (!pendingRolls[index]) return;
             
-            const slot = document.getElementById(`slot-${index}`);
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
                     <div class="slot-value" style="color: #ff4444;">✗</div>
                     <div class="slot-variant" style="display: none;"></div>
-                    <div class="slot-buttons">
-                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${index})">✓</button>
-                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${index})">✗</button>
-                    </div>
                 `;
                 slot.classList.remove('selected');
+                slot.classList.remove('rolled');
+            }
+            
+            // Disable the buttons for this slot
+            const wrapper = slot.closest('.slot-wrapper');
+            if (wrapper) {
+                const buttons = wrapper.querySelector('.slot-buttons');
+                if (buttons) {
+                    buttons.style.opacity = '0.5';
+                    buttons.style.pointerEvents = 'none';
+                }
             }
             
             pendingRolls[index] = null;
@@ -1976,23 +2126,38 @@
             isRolling = true;
             document.getElementById('rollBtn').disabled = true;
             
+            // Reset accepted count for new roll
+            currentRollAcceptedCount = 0;
+            currentRollGeneratedRolls = [];
+            
             const slots = document.querySelectorAll('.slot');
             slots.forEach((slot, i) => {
                 slot.innerHTML = `
                     <div class="roll-indicator">${i + 1}</div>
+                    ${slot.getAttribute('data-acceptable') === 'true' ? '<div class="middle-indicator">✓</div>' : ''}
                     <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
-                    <div class="slot-buttons">
-                        <button class="slot-btn slot-accept-btn" onclick="acceptRoll(${i})">✓</button>
-                        <button class="slot-btn slot-decline-btn" onclick="declineRoll(${i})">✗</button>
-                    </div>
                 `;
-                slot.className = 'slot';
+                slot.className = 'slot unrolled';
+                if (slot.getAttribute('data-acceptable') === 'true') {
+                    slot.classList.add('acceptable');
+                }
                 slot.classList.remove('selected');
+                slot.classList.remove('rolled');
                 const starIndicator = slot.querySelector('.slot-stars');
                 if (starIndicator) starIndicator.remove();
                 const enchantIndicator = slot.querySelector('.slot-enchant');
                 if (enchantIndicator) enchantIndicator.remove();
+                
+                // Re-enable buttons for acceptable slots
+                const wrapper = slot.closest('.slot-wrapper');
+                if (wrapper) {
+                    const buttons = wrapper.querySelector('.slot-buttons');
+                    if (buttons) {
+                        buttons.style.opacity = '1';
+                        buttons.style.pointerEvents = 'auto';
+                    }
+                }
             });
             
             document.getElementById('selectedSlotDetails').style.display = 'none';
@@ -2086,7 +2251,7 @@
                     
                     const stars = generatedEnchants.length > 0 ? generateStars(true) : 0;
                     
-                    generatedRolls.push({
+                    const rollData = {
                         baseRng: baseRng,
                         finalRng: finalRng,
                         rank: rankName,
@@ -2096,8 +2261,12 @@
                         timestamp: Date.now(),
                         rollNumber: rollNumber,
                         isSecret: !!secret,
-                        secretChance: secretChance
-                    });
+                        secretChance: secretChance,
+                        generatedIndex: i
+                    };
+                    
+                    generatedRolls.push(rollData);
+                    currentRollGeneratedRolls.push(rollData);
                     
                     pauseRNGThreshold = parseFloat(document.getElementById('pauseRNG').value) || 0;
                     pauseSecretRarityThreshold = parseFloat(document.getElementById('pauseSecretRarity').value) || 0;
@@ -2141,7 +2310,7 @@
                     }
                 }
                 
-                // Auto-scroll to middle slot
+                // Auto-scroll to middle of all slots
                 const viewport = document.getElementById('rollerViewport');
                 const middleSlotIndex = Math.floor(totalDisplaySlots / 2);
                 const middleSlot = document.getElementById(`slot-${middleSlotIndex}`);
