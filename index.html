@@ -2074,7 +2074,7 @@
 function updateSlots() {
             const container = document.getElementById('slotsContainer');
             container.innerHTML = '';
-            const totalSlots = getTotalBulkRolls() * 5;
+            const totalSlots = getTotalBulkRolls();
             pendingRolls = new Array(totalSlots).fill(null);
             
             // Calculate the middle section for acceptable slots - ALL slots are acceptable now
