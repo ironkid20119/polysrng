@@ -158,25 +158,25 @@
             border-radius: 15px;
             padding: 20px;
             border: 3px solid #ff69b4;
-            height: 220px; /* Increased height for buttons */
+            height: 220px;
             overflow: hidden;
         }
         
-.roller-viewport {
-    width: 100%;
-    height: calc(100% - 60px);
-    overflow-x: scroll;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #ff69b4 #f0f0f0;
-    cursor: grab;
-}
-
-.roller-viewport:active {
-    cursor: grabbing;
-}
+        .roller-viewport {
+            width: 100%;
+            height: calc(100% - 60px);
+            overflow-x: scroll;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: #ff69b4 #f0f0f0;
+            user-select: none;
+            cursor: grab;
+        }
         
-        /* Always show scrollbar */
+        .roller-viewport:active {
+            cursor: grabbing;
+        }
+        
         .roller-viewport::-webkit-scrollbar {
             height: 8px;
             display: block !important;
@@ -210,8 +210,8 @@
         }
         
         .slot {
-            width: 60px;
-            height: 80px;
+            width: 70px;
+            height: 90px;
             background: white;
             border: 2px solid #ddd;
             border-radius: 8px;
@@ -227,6 +227,8 @@
             position: relative;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            padding: 3px;
+            box-sizing: border-box;
         }
         
         /* Rank-specific fonts */
@@ -262,11 +264,26 @@
         }
         
         .slot-value {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 4px;
             transition: all 0.3s;
             text-align: center;
+            width: 100%;
+            line-height: 1.2;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-height: 40px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 2px 0;
+        }
+        
+        .slot-value.multiline {
+            font-size: 12px;
+            line-height: 1.1;
         }
         
         .slot-variant {
@@ -275,8 +292,31 @@
             color: white;
             padding: 2px 6px;
             border-radius: 10px;
-            margin-top: 4px;
+            margin-bottom: 4px;
             text-transform: lowercase;
+            width: 90%;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .slot-rank {
+            font-size: 9px;
+            margin-top: 4px;
+            color: #666;
+            text-transform: lowercase;
+            width: 90%;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsowhite-space: nowrap;
+        }
+        
+        .slot-rank.solar-rank { color: orange !important; }
+        .slot-rank.completionist-rank { color: #00ffff !important; }
+        .slot-rank.poly-squared-rank { 
+            color: #FF00FF !important;
+            animation: pulse 1s infinite;
         }
         
         .slot-stars {
@@ -839,9 +879,9 @@
         
         .roll-indicator {
             position: absolute;
-            top: 5px;
-            left: 5px;
-            font-size: 10px;
+            top: 2px;
+            left: 2px;
+            font-size: 9px;
             color: #ff69b4;
             font-weight: bold;
         }
@@ -880,6 +920,12 @@
         
         .acceptable .acceptable-indicator {
             display: block;
+        }
+        
+        /* Drag scroll for roller */
+        .roller-viewport.dragging {
+            cursor: grabbing;
+            user-select: none;
         }
     </style>
 </head>
@@ -1117,6 +1163,8 @@
     <script>
         // Helper function to format numbers
         function formatNumber(num) {
+            if (num === -2932932) return "-2,932,932";
+            if (num === -500) return "-500";
             if (num >= 1e9) {
                 return num.toExponential(3);
             }
@@ -1219,16 +1267,16 @@
 
         // SPINNER REWARDS
         const SPINNER_REWARDS = [
-    { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 16000 },
-    { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', weight: 14000 },
-    { name: 'endless', type: 'addition', value: 5, color: '#ff6600', weight: 8000 },
-    { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', weight: 6000 },
-    { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', weight: 4000 },
-    { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', weight: 3200 },
-    { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', weight: 2000 },
-    { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', weight: 20000 }, // ~20% (1/5)
-    { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', weight: 1 } // 1/50,000
-];
+            { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', weight: 16000 },
+            { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', weight: 14000 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', weight: 8000 },
+            { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', weight: 6000 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', weight: 4000 },
+            { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', weight: 3200 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', weight: 2000 },
+            { name: 'combo', type: 'combo', value: 1, color: '#ff00ff', weight: 20000 },
+            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', weight: 1 }
+        ];
 
         // game state
         let polycoin = 0;
@@ -1279,6 +1327,11 @@
         let currentRollAcceptedCount = 0;
         let currentRollGeneratedRolls = [];
         let acceptableSlots = [];
+
+        // Drag scrolling variables
+        let isDragging = false;
+        let startX;
+        let scrollLeft;
 
         // Get font for rank name
         function getRankFont(rankName) {
@@ -1343,6 +1396,57 @@
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
             document.querySelector('.dark-mode-toggle').textContent = '☀️ Light Mode';
+        }
+
+        // Drag scrolling functionality
+        function initDragScrolling() {
+            const viewport = document.getElementById('rollerViewport');
+            
+            viewport.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.pageX - viewport.offsetLeft;
+                scrollLeft = viewport.scrollLeft;
+                viewport.classList.add('dragging');
+                e.preventDefault();
+            });
+            
+            viewport.addEventListener('mouseleave', () => {
+                isDragging = false;
+                viewport.classList.remove('dragging');
+            });
+            
+            viewport.addEventListener('mouseup', () => {
+                isDragging = false;
+                viewport.classList.remove('dragging');
+            });
+            
+            viewport.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - viewport.offsetLeft;
+                const walk = (x - startX) * 2;
+                viewport.scrollLeft = scrollLeft - walk;
+            });
+            
+            // Touch events for mobile
+            viewport.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - viewport.offsetLeft;
+                scrollLeft = viewport.scrollLeft;
+                viewport.classList.add('dragging');
+            });
+            
+            viewport.addEventListener('touchend', () => {
+                isDragging = false;
+                viewport.classList.remove('dragging');
+            });
+            
+            viewport.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const x = e.touches[0].pageX - viewport.offsetLeft;
+                const walk = (x - startX) * 2;
+                viewport.scrollLeft = scrollLeft - walk;
+            });
         }
 
         // load game on start
@@ -1767,8 +1871,9 @@
                 wrapper.innerHTML = `
                     <div class="slot unrolled ${isAcceptable ? 'acceptable' : ''}" id="slot-${i}" data-index="${i}">
                         <div class="roll-indicator">${i + 1}</div>
-                        <div class="slot-value">?</div>
                         <div class="slot-variant" style="display: none;"></div>
+                        <div class="slot-value">?</div>
+                        <div class="slot-rank" style="display: none;"></div>
                         <div class="acceptable-indicator">✓</div>
                     </div>
                     <div class="slot-buttons">
@@ -1844,27 +1949,108 @@
             const slot = document.getElementById(`slot-${index}`);
             if (!slot) return;
             
-            const valueEl = slot.querySelector('.slot-value');
             const variantEl = slot.querySelector('.slot-variant');
+            const valueEl = slot.querySelector('.slot-value');
+            const rankEl = slot.querySelector('.slot-rank');
             
-            // First, show the placeholder text
-            const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
-            if (displayText) {
-                valueEl.textContent = displayText;
-                valueEl.className = 'slot-value secret-display';
-            } else {
-                valueEl.textContent = formatNumber(finalRng);
-                valueEl.className = 'slot-value';
+            // Set variant (above RNG)
+            variantEl.textContent = variantName;
+            variantEl.style.display = 'block';
+            
+            // Set rank (below RNG)
+            rankEl.textContent = rankName;
+            rankEl.style.display = 'block';
+            
+            // Add special rank classes
+            if (rankName === 'solar') {
+                rankEl.classList.add('solar-rank');
+            } else if (rankName === 'Completionist') {
+                rankEl.classList.add('completionist-rank');
+            } else if (rankName === 'poly²') {
+                rankEl.classList.add('poly-squared-rank');
             }
             
+            // Apply rank-specific font
             const fontClass = getRankFont(rankName);
             slot.className = 'slot ' + fontClass + ' rolled';
             if (acceptableSlots.includes(index)) {
                 slot.classList.add('acceptable');
             }
             
-            variantEl.textContent = variantName;
-            variantEl.style.display = 'block';
+            // For non-acceptable slots, show secret display text
+            if (!acceptableSlots.includes(index)) {
+                const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
+                if (displayText) {
+                    valueEl.textContent = displayText;
+                    valueEl.className = 'slot-value secret-display';
+                    
+                    // Check if we need multiline
+                    if (displayText.length > 8) {
+                        valueEl.classList.add('multiline');
+                    }
+                } else {
+                    // Format number and check if it needs multiline
+                    const formatted = formatNumber(finalRng);
+                    valueEl.textContent = formatted;
+                    valueEl.className = 'slot-value';
+                    
+                    if (formatted.length > 10) {
+                        valueEl.classList.add('multiline');
+                    }
+                }
+            } else {
+                // For acceptable slots, show actual value
+                const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
+                if (displayText && isSecret) {
+                    valueEl.textContent = displayText;
+                    valueEl.className = 'slot-value secret-display';
+                    
+                    // Animate secret reveal
+                    valueEl.classList.add('animating');
+                    
+                    setTimeout(() => {
+                        valueEl.classList.remove('animating');
+                        valueEl.textContent = formatNumber(finalRng);
+                        valueEl.className = 'slot-value';
+                        
+                        if (formatNumber(finalRng).length > 10) {
+                            valueEl.classList.add('multiline');
+                        }
+                        
+                        const color = getRNGColor(finalRng, rankName);
+                        if (color.includes('gradient')) {
+                            valueEl.style.background = color;
+                            valueEl.style.webkitBackgroundClip = 'text';
+                            valueEl.style.webkitTextFillColor = 'transparent';
+                            valueEl.style.backgroundClip = 'text';
+                        } else {
+                            valueEl.style.background = 'none';
+                            valueEl.style.webkitTextFillColor = 'inherit';
+                            valueEl.style.color = color;
+                        }
+                    }, 500);
+                } else {
+                    const formatted = formatNumber(finalRng);
+                    valueEl.textContent = formatted;
+                    valueEl.className = 'slot-value';
+                    
+                    if (formatted.length > 10) {
+                        valueEl.classList.add('multiline');
+                    }
+                    
+                    const color = getRNGColor(finalRng, rankName);
+                    if (color.includes('gradient')) {
+                        valueEl.style.background = color;
+                        valueEl.style.webkitBackgroundClip = 'text';
+                        valueEl.style.webkitTextFillColor = 'transparent';
+                        valueEl.style.backgroundClip = 'text';
+                    } else {
+                        valueEl.style.background = 'none';
+                        valueEl.style.webkitTextFillColor = 'inherit';
+                        valueEl.style.color = color;
+                    }
+                }
+            }
             
             if (stars && stars > 0) {
                 let starIndicator = slot.querySelector('.slot-stars');
@@ -1885,56 +2071,6 @@
                 }
                 enchantIndicator.textContent = '+E';
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
-            }
-            
-            // If it's a secret display text, animate it first
-            if (displayText && displayText !== formatNumber(finalRng)) {
-                valueEl.classList.add('animating');
-                
-                setTimeout(() => {
-                    valueEl.classList.remove('animating');
-                    valueEl.textContent = isSecret ? rankName : formatNumber(finalRng);
-                    
-                    const color = getRNGColor(finalRng, rankName);
-                    if (color.includes('gradient')) {
-                        valueEl.style.background = color;
-                        valueEl.style.webkitBackgroundClip = 'text';
-                        valueEl.style.webkitTextFillColor = 'transparent';
-                        valueEl.style.backgroundClip = 'text';
-                    } else {
-                        valueEl.style.background = 'none';
-                        valueEl.style.webkitTextFillColor = 'inherit';
-                        valueEl.style.color = color;
-                    }
-                    
-                    if (rankName === 'solar') {
-                        valueEl.classList.add('solar-rank');
-                    } else if (rankName === 'Completionist') {
-                        valueEl.classList.add('completionist-rank');
-                    } else if (rankName === 'poly²') {
-                        valueEl.classList.add('poly-squared-rank');
-                    }
-                }, 500);
-            } else {
-                const color = getRNGColor(finalRng, rankName);
-                if (color.includes('gradient')) {
-                    valueEl.style.background = color;
-                    valueEl.style.webkitBackgroundClip = 'text';
-                    valueEl.style.webkitTextFillColor = 'transparent';
-                    valueEl.style.backgroundClip = 'text';
-                } else {
-                    valueEl.style.background = 'none';
-                    valueEl.style.webkitTextFillColor = 'inherit';
-                    valueEl.style.color = color;
-                }
-                
-                if (rankName === 'solar') {
-                    valueEl.classList.add('solar-rank');
-                } else if (rankName === 'Completionist') {
-                    valueEl.classList.add('completionist-rank');
-                } else if (rankName === 'poly²') {
-                    valueEl.classList.add('poly-squared-rank');
-                }
             }
         }
 
@@ -2020,8 +2156,9 @@
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
-                    <div class="slot-value" style="color: #90ee90;">✓</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-value" style="color: #90ee90;">✓</div>
+                    <div class="slot-rank" style="display: none;"></div>
                 `;
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
@@ -2066,8 +2203,9 @@
             if (slot) {
                 slot.innerHTML = `
                     <div class="roll-indicator">${index + 1}</div>
-                    <div class="slot-value" style="color: #ff4444;">✗</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-value" style="color: #ff4444;">✗</div>
+                    <div class="slot-rank" style="display: none;"></div>
                 `;
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
@@ -2146,8 +2284,9 @@
             slots.forEach((slot, i) => {
                 slot.innerHTML = `
                     <div class="roll-indicator">${i + 1}</div>
-                    <div class="slot-value">?</div>
                     <div class="slot-variant" style="display: none;"></div>
+                    <div class="slot-value">?</div>
+                    <div class="slot-rank" style="display: none;"></div>
                     <div class="acceptable-indicator">✓</div>
                 `;
                 slot.className = 'slot unrolled';
@@ -3298,6 +3437,7 @@
         updateUI();
         updateIndex();
         updateMergeSelects();
+        initDragScrolling();
         
         document.getElementById('inventoryContent').classList.add('open');
         document.getElementById('enchantsContent').classList.add('open');
