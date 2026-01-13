@@ -2071,7 +2071,7 @@
             return 1;
         }
 
-function updateSlots() {
+        function updateSlots() {
             const container = document.getElementById('slotsContainer');
             container.innerHTML = '';
             const totalSlots = getTotalBulkRolls();
@@ -2178,40 +2178,76 @@ function updateSlots() {
             detailsContainer.style.display = 'block';
         }
 
-// Set rank color to match RNG color (except for completionist which has its own animation)
-    if (rankName !== 'Completionist') {
-        if (color.includes('gradient')) {
-            rankEl.style.background = color;
-            rankEl.style.webkitBackgroundClip = 'text';
-            rankEl.style.webkitTextFillColor = 'transparent';
-            rankEl.style.backgroundClip = 'text';
-        } else {
-            rankEl.style.color = color;
-        }
-    }
-    
-    if (stars && stars > 0) {
-        let starIndicator = slot.querySelector('.slot-stars');
-        if (!starIndicator) {
-            starIndicator = document.createElement('div');
-            starIndicator.className = 'slot-stars';
-            slot.appendChild(starIndicator);
-        }
-        starIndicator.textContent = '⭐'.repeat(stars);
-    }
-    
-    if (generatedEnchants && generatedEnchants.length > 0) {
-        let enchantIndicator = slot.querySelector('.slot-enchant');
-        if (!enchantIndicator) {
-            enchantIndicator = document.createElement('div');
-            enchantIndicator.className = 'slot-enchant';
-            slot.appendChild(enchantIndicator);
-        }
-        enchantIndicator.textContent = abbreviateEnchant(generatedEnchants[0].name);
-        enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
-        enchantIndicator.style.backgroundColor = generatedEnchants[0].color;
-    }
-}
+        // ADDED: displaySlot function that was missing
+        function displaySlot(index, baseRng, finalRng, rank, variant, generatedEnchants, stars, isSecret, secretChance) {
+            const slot = document.getElementById(`slot-${index}`);
+            if (!slot) return;
+            
+            // Clear previous classes
+            slot.className = 'slot rolled acceptable';
+            slot.classList.remove('null-secret', 'completionist-animating');
+            
+            // Remove all rank font classes
+            const fontClasses = ['font-fantasy', 'font-giant', 'font-ultimate', 'font-apex', 
+                               'font-omega', 'font-insane', 'font-colossal', 'font-gargantuan', 
+                               'font-hyper', 'font-insurmountable', 'font-infinitude', 'font-almighty'];
+            fontClasses.forEach(fontClass => slot.classList.remove(fontClass));
+            
+            // Add rank-specific font
+            const fontClass = getRankFont(rank);
+            if (fontClass) {
+                slot.classList.add(fontClass);
+            }
+            
+            // For NULL secret, add special class
+            if (rank === 'NULL') {
+                slot.classList.add('null-secret');
+            }
+            
+            const color = getRNGColor(finalRng, rank);
+            let style = `color: ${color};`;
+            if (color.includes('gradient')) {
+                style = `background: ${color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;`;
+            }
+            
+            // Check if we should obfuscate the RNG display
+            const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
+            const rngDisplay = displayText ? displayText : formatNumber(finalRng);
+            
+            // Update slot content
+            slot.innerHTML = `
+                <div class="roll-indicator">${index + 1}</div>
+                <div class="slot-variant">${variant}</div>
+                <div class="slot-value" style="${style}">${rngDisplay}</div>
+                <div class="slot-rank">${rank}</div>
+            `;
+            
+            // Apply special styles for the rank element
+            const rankEl = slot.querySelector('.slot-rank');
+            if (rankEl) {
+                // Set rank color to match RNG color (except for completionist which has its own animation)
+                if (rank !== 'Completionist') {
+                    if (color.includes('gradient')) {
+                        rankEl.style.background = color;
+                        rankEl.style.webkitBackgroundClip = 'text';
+                        rankEl.style.webkitTextFillColor = 'transparent';
+                        rankEl.style.backgroundClip = 'text';
+                    } else {
+                        rankEl.style.color = color;
+                    }
+                }
+                
+                // Add special classes for solar, poly², and Completionist ranks
+                if (rank === 'solar') {
+                    rankEl.classList.add('solar-rank');
+                } else if (rank === 'poly²') {
+                    rankEl.classList.add('poly-squared-rank');
+                } else if (rank === 'Completionist') {
+                    rankEl.classList.add('completionist-rank');
+                    // Start the completionist animation for this slot
+                    slot.classList.add('completionist-animating');
+                }
+            }
             
             if (stars && stars > 0) {
                 let starIndicator = slot.querySelector('.slot-stars');
@@ -2230,11 +2266,13 @@ function updateSlots() {
                     enchantIndicator.className = 'slot-enchant';
                     slot.appendChild(enchantIndicator);
                 }
-                // Use abbreviation for the first enchant
                 enchantIndicator.textContent = abbreviateEnchant(generatedEnchants[0].name);
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
                 enchantIndicator.style.backgroundColor = generatedEnchants[0].color;
             }
+            
+            // Make slot clickable again
+            slot.onclick = () => selectSlot(index);
         }
 
         function acceptRoll(index) {
@@ -2507,13 +2545,13 @@ function updateSlots() {
             rollNumber++;
             
             setTimeout(() => {
-                const totalDisplaySlots = getTotalBulkRolls() * 10;
+                const totalDisplaySlots = getTotalBulkRolls();
                 const actualBulkRolls = getTotalBulkRolls();
                 let maxRoll = 0;
                 let foundSecretToPause = false;
                 let foundEnchantToPause = false;
                 
-const generatedRolls = [];
+                const generatedRolls = [];
                 for (let i = 0; i < actualBulkRolls; i++) {
                     let baseRng = calculateRNG();
                     
@@ -2527,7 +2565,7 @@ const generatedRolls = [];
                         secretChance = secretObj ? secretObj.chance : 0;
                     }
                     
-                    const variant = getVariant(); // FIXED: Move this BEFORE the if/else
+                    const variant = getVariant();
                     let finalRng;
                     if (secret === 'poly²') {
                         finalRng = -2932932;
@@ -2637,8 +2675,7 @@ const generatedRolls = [];
                 
                 pendingRolls = new Array(totalDisplaySlots).fill(null);
                 for (let i = 0; i < totalDisplaySlots; i++) {
-                    const rollIndex = i % generatedRolls.length;
-                    const rollData = generatedRolls[rollIndex];
+                    const rollData = generatedRolls[i];
                     
                     if (rollData) {
                         pendingRolls[i] = rollData;
