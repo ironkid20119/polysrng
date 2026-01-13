@@ -2178,38 +2178,100 @@ function updateSlots() {
             detailsContainer.style.display = 'block';
         }
 
-        function displaySlot(index, baseRng, finalRng, rankName, variantName, generatedEnchants, stars, isSecret = false, secretChance = 0) {
-            const slot = document.getElementById(`slot-${index}`);
-            if (!slot) return;
-            
-            const variantEl = slot.querySelector('.slot-variant');
-            const valueEl = slot.querySelector('.slot-value');
-            const rankEl = slot.querySelector('.slot-rank');
-            
-            // Set variant (above RNG)
-            variantEl.textContent = variantName;
-            variantEl.style.display = 'block';
-            
-            // Set rank (below RNG)
-            rankEl.textContent = rankName;
-            rankEl.style.display = 'block';
-            
-            // Add special rank classes
-            if (rankName === 'solar') {
-                rankEl.classList.add('solar-rank');
-            } else if (rankName === 'poly²') {
-                rankEl.classList.add('poly-squared-rank');
-            } else if (rankName === 'NULL') {
-                rankEl.textContent = 'IMPOSSIBLE';
-                slot.classList.add('null-secret');
-            } else if (rankName === 'Completionist') {
-                rankEl.classList.add('completionist-rank');
-                slot.classList.add('completionist-animating');
-                // Start the completionist animation if not already started
-                if (!completionistInterval) {
-                    startCompletionistAnimation();
-                }
-            }
+function displaySlot(index, baseRng, finalRng, rankName, variantName, generatedEnchants, stars, isSecret = false, secretChance = 0) {
+    const slot = document.getElementById(`slot-${index}`);
+    if (!slot) return;
+    
+    const variantEl = slot.querySelector('.slot-variant');
+    const valueEl = slot.querySelector('.slot-value');
+    const rankEl = slot.querySelector('.slot-rank');
+    
+    // Set variant (above RNG)
+    variantEl.textContent = variantName;
+    variantEl.style.display = 'block';
+    
+    // Set rank (below RNG)
+    rankEl.textContent = rankName;
+    rankEl.style.display = 'block';
+    
+    // Add special rank classes
+    if (rankName === 'solar') {
+        rankEl.classList.add('solar-rank');
+    } else if (rankName === 'poly²') {
+        rankEl.classList.add('poly-squared-rank');
+    } else if (rankName === 'NULL') {
+        rankEl.textContent = 'IMPOSSIBLE';
+        slot.classList.add('null-secret');
+    } else if (rankName === 'Completionist') {
+        rankEl.classList.add('completionist-rank');
+        slot.classList.add('completionist-animating');
+        // Start the completionist animation if not already started
+        if (!completionistInterval) {
+            startCompletionistAnimation();
+        }
+    }
+    
+    // Apply rank-specific font (except for completionist which will be animated)
+    if (rankName !== 'Completionist') {
+        const fontClass = getRankFont(rankName);
+        slot.className = 'slot ' + fontClass + ' rolled';
+    } else {
+        slot.className = 'slot rolled completionist-animating';
+    }
+    slot.classList.add('acceptable');
+    
+    // Get the color for this RNG value
+    const color = getRNGColor(finalRng, rankName);
+    
+    // Check if we should show secret display text
+    const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
+    if (displayText) {
+        valueEl.textContent = displayText;
+        valueEl.className = 'slot-value secret-display animating'; // ADD ANIMATING CLASS HERE
+        
+        // Check if we need multiline
+        if (displayText.length > 8) {
+            valueEl.classList.add('multiline');
+        }
+        
+        // Set the color
+        if (color.includes('gradient')) {
+            valueEl.style.background = color;
+            valueEl.style.webkitBackgroundClip = 'text';
+            valueEl.style.webkitTextFillColor = 'transparent';
+            valueEl.style.backgroundClip = 'text';
+        } else {
+            valueEl.style.background = 'none';
+            valueEl.style.webkitTextFillColor = 'inherit';
+            valueEl.style.color = color;
+        }
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            valueEl.classList.remove('animating');
+        }, 500);
+    } else {
+        // Format number and check if it needs multiline
+        const formatted = formatNumber(finalRng);
+        valueEl.textContent = formatted;
+        valueEl.className = 'slot-value';
+        
+        if (formatted.length > 10) {
+            valueEl.classList.add('multiline');
+        }
+        
+        // Set the color
+        if (color.includes('gradient')) {
+            valueEl.style.background = color;
+            valueEl.style.webkitBackgroundClip = 'text';
+            valueEl.style.webkitTextFillColor = 'transparent';
+            valueEl.style.backgroundClip = 'text';
+        } else {
+            valueEl.style.background = 'none';
+            valueEl.style.webkitTextFillColor = 'inherit';
+            valueEl.style.color = color;
+        }
+    }
             
             // Apply rank-specific font (except for completionist which will be animated)
             if (rankName !== 'Completionist') {
