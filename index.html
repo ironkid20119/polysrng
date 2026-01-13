@@ -221,7 +221,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
@@ -318,6 +318,8 @@
             justify-content: center;
             flex: 1;
             padding: 2px 0;
+            position: relative;
+            z-index: 1;
         }
         
         .slot-value.multiline {
@@ -338,17 +340,26 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            position: relative;
+            z-index: 2;
         }
         
         .slot-rank {
             font-size: 9px;
-            margin-top: 4px;
+            margin-top: 2px;
             text-transform: lowercase;
             width: 90%;
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            position: relative;
+            z-index: 3;
+            padding: 1px 0;
+            min-height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .slot-rank.solar-rank { color: orange !important; }
@@ -384,24 +395,27 @@
             right: 2px;
             font-size: 8px;
             color: gold;
+            z-index: 4;
         }
         
         .slot-enchant {
             position: absolute;
             bottom: 2px;
             left: 2px;
-            font-size: 8px;
+            font-size: 7px;
             background: #9370db;
             color: white;
             padding: 1px 3px;
             border-radius: 3px;
             font-weight: bold;
-            width: 66px;
+            width: 64px;
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             z-index: 2;
+            max-height: 12px;
+            line-height: 1;
         }
         
         .selected-slot-details {
@@ -975,9 +989,15 @@
             font-size: 9px;
             color: #ff69b4;
             font-weight: bold;
+            z-index: 5;
         }
         
-        .animating {
+        /* Secret animation */
+        .slot-value.secret-animating {
+            animation: secret-reveal 0.75s ease-in-out;
+        }
+        
+        .slot-rank.secret-animating {
             animation: secret-reveal 0.75s ease-in-out;
         }
         
@@ -1023,6 +1043,16 @@
         .index-item.completionist-index {
             color: #00ffff !important;
             animation: completionist-color-cycle 0.12s infinite;
+        }
+        
+        /* Obfuscation animation */
+        .slot-value.obfuscating {
+            animation: obfuscate 0.5s infinite alternate;
+        }
+        
+        @keyframes obfuscate {
+            0% { opacity: 1; }
+            100% { opacity: 0.3; }
         }
     </style>
 </head>
@@ -1566,6 +1596,11 @@
             if (rng >= 1e9) return "?????";
             // Removed: if (rng >= 1e6) return "???";
             return null;
+        }
+
+        // Check if RNG should trigger obfuscation animation
+        function shouldObfuscate(rng) {
+            return rng >= 1e9;
         }
 
         // Dark mode toggle
@@ -2251,14 +2286,14 @@
             detailsContainer.style.display = 'block';
         }
 
-        // ADDED: displaySlot function that was missing
+        // FIXED: displaySlot function - fixed rank display and obfuscation animation
         function displaySlot(index, baseRng, finalRng, rank, variant, generatedEnchants, stars, isSecret, secretChance) {
             const slot = document.getElementById(`slot-${index}`);
             if (!slot) return;
             
             // Clear previous classes
             slot.className = 'slot rolled acceptable';
-            slot.classList.remove('null-secret', 'completionist-animating');
+            slot.classList.remove('null-secret', 'completionist-animating', 'obfuscating');
             
             // Remove all rank font classes
             const fontClasses = ['font-fantasy', 'font-giant', 'font-ultimate', 'font-apex', 
@@ -2287,7 +2322,7 @@
             const displayText = getRNGDisplayText(finalRng, isSecret, secretChance);
             const rngDisplay = displayText ? displayText : formatNumber(finalRng);
             
-            // Update slot content
+            // Update slot content with proper z-index layering
             slot.innerHTML = `
                 <div class="roll-indicator">${index + 1}</div>
                 <div class="slot-variant">${variant}</div>
@@ -2322,6 +2357,16 @@
                 }
             }
             
+            // Apply obfuscation animation for high RNG values
+            const valueEl = slot.querySelector('.slot-value');
+            if (shouldObfuscate(finalRng) && !displayText) {
+                valueEl.classList.add('obfuscating');
+                if (rankEl) {
+                    rankEl.classList.add('obfuscating');
+                }
+            }
+            
+            // Add stars indicator if present
             if (stars && stars > 0) {
                 let starIndicator = slot.querySelector('.slot-stars');
                 if (!starIndicator) {
@@ -2332,6 +2377,7 @@
                 starIndicator.textContent = '⭐'.repeat(stars);
             }
             
+            // Add enchant indicator if present - FIXED: Positioned to not cover rank
             if (generatedEnchants && generatedEnchants.length > 0) {
                 let enchantIndicator = slot.querySelector('.slot-enchant');
                 if (!enchantIndicator) {
@@ -2344,6 +2390,21 @@
                 enchantIndicator.textContent = enchantNames;
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
                 enchantIndicator.style.backgroundColor = generatedEnchants[0].color;
+                
+                // Adjust rank position to account for enchant indicator
+                if (rankEl) {
+                    rankEl.style.marginBottom = '12px'; // Make room for enchant indicator
+                }
+            } else {
+                // Remove enchant indicator if present
+                const enchantIndicator = slot.querySelector('.slot-enchant');
+                if (enchantIndicator) {
+                    enchantIndicator.remove();
+                }
+                // Reset rank position
+                if (rankEl) {
+                    rankEl.style.marginBottom = '';
+                }
             }
             
             // Make slot clickable again
@@ -2408,7 +2469,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating');
+                slot.classList.remove('completionist-animating', 'obfuscating');
             }
             
             // Disable the buttons for this slot
@@ -2450,7 +2511,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating');
+                slot.classList.remove('completionist-animating', 'obfuscating');
             }
             
             // Disable the buttons for this slot
@@ -2592,7 +2653,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('null-secret');
-                slot.classList.remove('completionist-animating');
+                slot.classList.remove('completionist-animating', 'obfuscating');
                 const starIndicator = slot.querySelector('.slot-stars');
                 if (starIndicator) starIndicator.remove();
                 const enchantIndicator = slot.querySelector('.slot-enchant');
