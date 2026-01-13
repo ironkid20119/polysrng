@@ -396,6 +396,12 @@
             padding: 1px 3px;
             border-radius: 3px;
             font-weight: bold;
+            width: 66px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            z-index: 2;
         }
         
         .selected-slot-details {
@@ -404,6 +410,10 @@
             background: #f9f9f9;
             border-radius: 10px;
             border: 2px solid #ff69b4;
+            max-height: 150px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            font-size: 14px;
         }
         
         .selected-slot-title {
@@ -426,6 +436,7 @@
             background: white;
             border-radius: 5px;
             text-align: center;
+            word-break: break-all;
         }
         
         .selected-slot-actions {
@@ -657,6 +668,24 @@
             border: 3px solid;
             border-top: 15px solid;
             border-image: linear-gradient(90deg, red, black, red) 1;
+        }
+        .inventory-item.tier-12 { 
+            border: 3px solid;
+            border-top: 15px solid;
+            border-image: linear-gradient(90deg, #FF69B4, #9370DB, #FF69B4) 1;
+            animation: spin-gradient 0.5s linear infinite;
+        }
+        .inventory-item.tier-13 { 
+            border: 3px solid;
+            border-top: 15px solid;
+            border-image: linear-gradient(90deg, cyan, #00008B, cyan) 1;
+            animation: spin-gradient 0.5s linear infinite;
+        }
+        .inventory-item.tier-14 { 
+            border: 3px solid;
+            border-top: 15px solid;
+            border-image: linear-gradient(90deg, white, black, white) 1;
+            animation: spin-gradient 0.5s linear infinite;
         }
         
         .tier-name {
@@ -949,12 +978,12 @@
         }
         
         .animating {
-            animation: secret-reveal 0.5s ease-in-out;
+            animation: secret-reveal 0.75s ease-in-out;
         }
         
         @keyframes secret-reveal {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
+            50% { transform: scale(1.25); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
         
@@ -1156,6 +1185,19 @@
                             <div class="upgrade-info">level: <span id="variantLuckLevel">0</span>/30</div>
                             <div class="upgrade-info">effect: +<span id="variantLuckAmount">0</span> variant luck</div>
                             <button onclick="buyUpgrade('variantLuck')" id="variantLuckBtn">buy (cost: <span id="variantLuckCost">50</span>)</button>
+                        </div>
+                        <!-- NEW UPGRADES -->
+                        <div class="upgrade-box">
+                            <div class="upgrade-title">eternium</div>
+                            <div class="upgrade-info">level: <span id="eterniumLevel">0</span>/4</div>
+                            <div class="upgrade-info">effect: +<span id="eterniumAmount">0</span>% chance for double bulk</div>
+                            <button onclick="buyUpgrade('eternium')" id="eterniumBtn">buy (cost: <span id="eterniumCost">1e12</span>)</button>
+                        </div>
+                        <div class="upgrade-box">
+                            <div class="upgrade-title">ultimatiplier</div>
+                            <div class="upgrade-info">level: <span id="ultimatiplierLevel">0</span>/100</div>
+                            <div class="upgrade-info">effect: +<span id="ultimatiplierAmount">0</span>% chance for x5 RNG</div>
+                            <button onclick="buyUpgrade('ultimatiplier')" id="ultimatiplierBtn">buy (cost: <span id="ultimatiplierCost">100</span>)</button>
                         </div>
                     </div>
                 </div>
@@ -1434,6 +1476,15 @@
         let currentRollAcceptedCount = 0;
         let currentRollGeneratedRolls = [];
         let acceptableSlots = [];
+        
+        // NEW UPGRADE VARIABLES
+        let eterniumLevel = 0;
+        let eterniumCost = 1e12;
+        let ultimatiplierLevel = 0;
+        let ultimatiplierCost = 100;
+        
+        // Variables for centering when autoroll stops
+        let pausedSlotIndex = -1;
 
         // Drag scrolling variables
         let isDragging = false;
@@ -1497,7 +1548,7 @@
             }
         }
 
-        // Get display text for high RNG values
+        // Get display text for high RNG values - UPDATED: removed 1e6 obfuscation
         function getRNGDisplayText(rng, isSecret = false, secretChance = 0) {
             if (rng === -500) return "-500";
             if (rng === -2932932) return "-2,932,932";
@@ -1506,12 +1557,14 @@
                 return "?????";
             }
             
+            if (rng >= 1e27) return "impossible";
+            if (rng >= 1e24) return "insane";
             if (rng >= 1e21) return "!?WTF?!";
             if (rng >= 1e18) return "how";
             if (rng >= 1e15) return "?!?!?";
             if (rng >= 1e12) return "!";
             if (rng >= 1e9) return "?????";
-            if (rng >= 1e6) return "???";
+            // Removed: if (rng >= 1e6) return "???";
             return null;
         }
 
@@ -1709,12 +1762,24 @@
             if (finalRng < 1000000000000) return { stars: 8, name: 'How', color: 'gray-white-gradient' };
             if (finalRng < 1e15) return { stars: 9, name: 'DAWG', color: 'yellow-white-gradient' };
             if (finalRng < 1e18) return { stars: 10, name: 'Lol', color: 'purple-violet-gradient' };
-            return { stars: 11, name: 'STOP', color: 'red-black-gradient' };
+            if (finalRng < 1e21) return { stars: 11, name: 'STOP', color: 'red-black-gradient' };
+            if (finalRng < 1e24) return { stars: 12, name: 'WTF', color: 'pink-purple-violet-gradient' };
+            if (finalRng < 1e27) return { stars: 13, name: 'insane', color: 'cyan-darkblue-cyan-gradient' };
+            return { stars: 14, name: 'impossible', color: 'white-black-gradient' };
         }
 
         function calculateRNG() {
             const luck = luckLevel * 0.5 + getTotalEnchantLuck();
-            const rng = Math.random() ** (-1.3 - (luck * 0.01));
+            let rng = Math.random() ** (-1.3 - (luck * 0.01));
+            
+            // Apply Ultimatiplier chance
+            if (ultimatiplierLevel > 0) {
+                const ultimatiplierChance = ultimatiplierLevel * 0.0005; // 0.05% per level
+                if (Math.random() < ultimatiplierChance) {
+                    rng *= 5; // x5 RNG
+                }
+            }
+            
             return Math.max(1, rng);
         }
 
@@ -1890,7 +1955,15 @@
                 total = 1;
             }
             
-            return Math.min(total, 100);
+            // Apply Eternium chance for double bulk
+            if (eterniumLevel > 0) {
+                const eterniumChance = eterniumLevel * 0.05; // 5% per level
+                if (Math.random() < eterniumChance) {
+                    total *= 2;
+                }
+            }
+            
+            return Math.min(total, 200); // Cap at 200
         }
 
         function getRank(rng) {
@@ -2266,7 +2339,9 @@
                     enchantIndicator.className = 'slot-enchant';
                     slot.appendChild(enchantIndicator);
                 }
-                enchantIndicator.textContent = abbreviateEnchant(generatedEnchants[0].name);
+                // Show full enchant name or abbreviation
+                const enchantNames = generatedEnchants.map(e => abbreviateEnchant(e.name)).join(',');
+                enchantIndicator.textContent = enchantNames;
                 enchantIndicator.title = generatedEnchants.map(e => e.name).join(', ');
                 enchantIndicator.style.backgroundColor = generatedEnchants[0].color;
             }
@@ -2503,6 +2578,7 @@
             // Reset accepted count for new roll
             currentRollAcceptedCount = 0;
             currentRollGeneratedRolls = [];
+            pausedSlotIndex = -1;
             
             const slots = document.querySelectorAll('.slot');
             slots.forEach((slot, i) => {
@@ -2550,6 +2626,7 @@
                 let maxRoll = 0;
                 let foundSecretToPause = false;
                 let foundEnchantToPause = false;
+                let foundRNGToPause = false;
                 
                 const generatedRolls = [];
                 for (let i = 0; i < actualBulkRolls; i++) {
@@ -2655,20 +2732,22 @@
                                 const rarity = 1 / enchantType.chance;
                                 if (rarity >= pauseEnchantRarityThreshold) {
                                     foundEnchantToPause = true;
+                                    pausedSlotIndex = i;
                                 }
                             }
                         });
                     }
                     
                     if (isAutorolling && pauseRNGThreshold > 0 && finalRng >= pauseRNGThreshold && finalRng > 0) {
-                        toggleAutoroll();
-                        alert(`Autoroll paused! Found roll with RNG ≥ ${formatNumber(pauseRNGThreshold)}.`);
+                        foundRNGToPause = true;
+                        pausedSlotIndex = i;
                     }
                     
                     if (isAutorolling && pauseSecretRarityThreshold > 0 && secret) {
                         const secretObj = SECRETS.find(s => s.name === secret);
                         if (secretObj && secretObj.chance >= pauseSecretRarityThreshold) {
                             foundSecretToPause = true;
+                            pausedSlotIndex = i;
                         }
                     }
                 }
@@ -2685,27 +2764,34 @@
                     }
                 }
                 
-                // Auto-scroll to the middle
-                const viewport = document.getElementById('rollerViewport');
-                if (viewport && totalDisplaySlots > 0) {
-                    const middleIndex = Math.floor(totalDisplaySlots / 2);
-                    const middleSlot = document.getElementById(`slot-${middleIndex}`);
-                    if (middleSlot) {
-                        const slotLeft = middleSlot.offsetLeft;
+                // Center on the slot that triggered the pause
+                if (pausedSlotIndex !== -1) {
+                    const viewport = document.getElementById('rollerViewport');
+                    const pausedSlot = document.getElementById(`slot-${pausedSlotIndex}`);
+                    if (viewport && pausedSlot) {
+                        const slotLeft = pausedSlot.offsetLeft;
                         const viewportWidth = viewport.offsetWidth;
-                        const slotWidth = middleSlot.offsetWidth;
+                        const slotWidth = pausedSlot.offsetWidth;
                         viewport.scrollLeft = slotLeft - (viewportWidth / 2) + (slotWidth / 2);
                     }
-                }
-                
-                if (foundSecretToPause && isAutorolling) {
-                    toggleAutoroll();
-                    alert(`Autoroll paused! Found secret with rarity ≥ ${formatNumber(pauseSecretRarityThreshold)}.`);
-                }
-                
-                if (foundEnchantToPause && isAutorolling) {
-                    toggleAutoroll();
-                    alert(`Autoroll paused! Found enchant with rarity ≥ ${formatNumber(pauseEnchantRarityThreshold)}.`);
+                    
+                    // Pause autoroll if needed
+                    if (isAutorolling && (foundRNGToPause || foundSecretToPause || foundEnchantToPause)) {
+                        toggleAutoroll();
+                    }
+                } else {
+                    // Auto-scroll to the middle if no specific pause
+                    const viewport = document.getElementById('rollerViewport');
+                    if (viewport && totalDisplaySlots > 0) {
+                        const middleIndex = Math.floor(totalDisplaySlots / 2);
+                        const middleSlot = document.getElementById(`slot-${middleIndex}`);
+                        if (middleSlot) {
+                            const slotLeft = middleSlot.offsetLeft;
+                            const viewportWidth = viewport.offsetWidth;
+                            const slotWidth = middleSlot.offsetWidth;
+                            viewport.scrollLeft = slotLeft - (viewportWidth / 2) + (slotWidth / 2);
+                        }
+                    }
                 }
                 
                 updateUI();
@@ -2771,6 +2857,16 @@
                 polycoin -= variantLuckCost;
                 variantLuckLevel++;
                 variantLuckCost = Math.floor(variantLuckCost * 1.2);
+            } else if (type === 'eternium') {
+                if (eterniumLevel >= 4 || polycoin < eterniumCost) return;
+                polycoin -= eterniumCost;
+                eterniumLevel++;
+                eterniumCost *= 1000;
+            } else if (type === 'ultimatiplier') {
+                if (ultimatiplierLevel >= 100 || polycoin < ultimatiplierCost) return;
+                polycoin -= ultimatiplierCost;
+                ultimatiplierLevel++;
+                ultimatiplierCost = Math.floor(ultimatiplierCost * 1.2);
             }
             updateUI();
             saveGame();
@@ -3462,6 +3558,17 @@
             document.getElementById('variantLuckCost').textContent = formatNumber(variantLuckCost);
             document.getElementById('variantLuckBtn').disabled = variantLuckLevel >= 30 || polycoin < variantLuckCost;
             
+            // NEW UPGRADES UI
+            document.getElementById('eterniumLevel').textContent = formatNumber(eterniumLevel);
+            document.getElementById('eterniumAmount').textContent = (eterniumLevel * 5).toFixed(0);
+            document.getElementById('eterniumCost').textContent = formatNumber(eterniumCost);
+            document.getElementById('eterniumBtn').disabled = eterniumLevel >= 4 || polycoin < eterniumCost;
+            
+            document.getElementById('ultimatiplierLevel').textContent = formatNumber(ultimatiplierLevel);
+            document.getElementById('ultimatiplierAmount').textContent = (ultimatiplierLevel * 0.05).toFixed(2);
+            document.getElementById('ultimatiplierCost').textContent = formatNumber(ultimatiplierCost);
+            document.getElementById('ultimatiplierBtn').disabled = ultimatiplierLevel >= 100 || polycoin < ultimatiplierCost;
+            
             document.getElementById('minSpeedLevel').textContent = formatNumber(minSpeedUpgrades);
             document.getElementById('minSpeedCost').textContent = formatNumber(5);
             document.getElementById('minSpeedBtn').disabled = minSpeedUpgrades >= 4 || tickets < 5;
@@ -3515,6 +3622,10 @@
                     cooldownThreshold,
                     cooldownTime,
                     isAutorolling,
+                    eterniumLevel,
+                    eterniumCost,
+                    ultimatiplierLevel,
+                    ultimatiplierCost,
                     discovered: {
                         variants: Array.from(discovered.variants),
                         ranks: Array.from(discovered.ranks),
@@ -3650,6 +3761,11 @@
                     ticketProdLevel = saveData.ticketProdLevel || 0;
                     ticketProdCost = saveData.ticketProdCost || 50;
                     spinnerUnlocked = saveData.spinnerUnlocked || false;
+                    
+                    eterniumLevel = saveData.eterniumLevel || 0;
+                    eterniumCost = saveData.eterniumCost || 1e12;
+                    ultimatiplierLevel = saveData.ultimatiplierLevel || 0;
+                    ultimatiplierCost = saveData.ultimatiplierCost || 100;
                     
                     cooldownThreshold = saveData.cooldownThreshold || 0;
                     cooldownTime = saveData.cooldownTime || 3;
