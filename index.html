@@ -91,6 +91,70 @@
             border-color: #666;
         }
         
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: toast-slide-in 0.3s ease-out;
+            max-width: 400px;
+            text-align: center;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: auto;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .toast.hide {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        @keyframes toast-slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .toast-title {
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .toast-message {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        
         .dark-mode-toggle {
             position: fixed;
             top: 20px;
@@ -105,8 +169,27 @@
             font-size: 14px;
         }
         
-        body.dark-mode .dark-mode-toggle {
+        .toast-toggle {
+            position: fixed;
+            top: 60px;
+            right: 20px;
             background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 12px;
+        }
+        
+        body.dark-mode .dark-mode-toggle,
+        body.dark-mode .toast-toggle {
+            background: #666;
+        }
+        
+        .toast-toggle.active {
+            background: #4CAF50;
         }
 
         .container {
@@ -248,6 +331,35 @@
         .slot.font-infinitude { font-family: 'Kaushan Script', cursive; }
         .slot.font-almighty { font-family: 'Bungee', cursive; }
         
+        /* NULL secret special styling */
+        .slot.null-secret {
+            border: 2px solid;
+            border-image: linear-gradient(90deg, white, black) 1;
+        }
+        
+        .slot.null-secret .slot-value {
+            color: gray !important;
+            font-family: 'Tangerine', cursive !important;
+            font-size: 28px !important; /* x2 bigger */
+            font-weight: bold !important;
+            background: linear-gradient(90deg, black, gray, white, gray, black) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            line-height: 1 !important;
+            height: auto !important;
+        }
+        
+        .slot.null-secret .slot-rank {
+            font-size: 18px !important; /* x2 bigger */
+            font-weight: bold !important;
+            color: gray !important;
+            background: linear-gradient(90deg, black, gray, white, gray, black) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+        
         /* Completionist animation */
         .slot.completionist-animating {
             animation: completionist-cycle 0.01s infinite;
@@ -268,19 +380,6 @@
             84.59% { font-family: 'Kaushan Script', cursive; }
             92.28% { font-family: 'Bungee', cursive; }
             100% { font-family: Arial, sans-serif; }
-        }
-        
-        /* NULL secret slot */
-        .slot.null-secret {
-            border: 2px solid;
-            border-image: linear-gradient(90deg, white, black) 1;
-        }
-        
-        .slot.null-secret .slot-value {
-            color: gray !important;
-            font-family: 'Tangerine', cursive !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
         }
         
         .slot:hover {
@@ -370,6 +469,14 @@
         .slot-rank.poly-squared-rank { 
             color: #FF00FF !important;
             animation: pulse 1s infinite;
+        }
+        .slot-rank.null-rank {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            background: linear-gradient(90deg, black, gray, white, gray, black) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
         }
         
         @keyframes completionist-color-cycle {
@@ -801,6 +908,14 @@
         .index-item.rank-insurmountable { font-family: 'Gloria Hallelujah', cursive; }
         .index-item.rank-infinitude { font-family: 'Kaushan Script', cursive; }
         .index-item.rank-almighty { font-family: 'Bungee', cursive; }
+        .index-item.null-rank {
+            font-family: 'Tangerine', cursive !important;
+            font-weight: bold;
+            background: linear-gradient(90deg, black, gray, white, gray, black) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
         
         .equip-btn {
             background: #90ee90;
@@ -1050,14 +1165,77 @@
             animation: obfuscate 0.5s infinite alternate;
         }
         
+        .slot-rank.obfuscating {
+            animation: obfuscate 0.5s infinite alternate;
+        }
+        
         @keyframes obfuscate {
             0% { opacity: 1; }
             100% { opacity: 0.3; }
         }
+        
+        /* Bottom stats */
+        .bottom-stats {
+            margin-top: 40px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ff69b4;
+        }
+        
+        .bottom-stats-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 20px;
+            text-transform: lowercase;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+        
+        .stat-item-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: lowercase;
+        }
+        
+        .stat-item-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff69b4;
+        }
+        
+        body.dark-mode .bottom-stats {
+            background: #333;
+            border-color: #ff69b4;
+        }
+        
+        body.dark-mode .stat-item {
+            background: #444;
+            border-color: #666;
+        }
     </style>
 </head>
 <body>
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
     <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    <button class="toast-toggle active" id="toastToggleBtn" onclick="toggleToastNotifications()">🔔 Toasts ON</button>
     
     <div class="container">
         <h1>polys silly rngame</h1>
@@ -1299,6 +1477,14 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Bottom Stats Section -->
+        <div class="bottom-stats">
+            <div class="bottom-stats-title">📊 Game Statistics</div>
+            <div class="stats-grid" id="bottomStatsGrid">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1342,9 +1528,56 @@
                 'overtime': 'Ot',
                 'polys blessing': 'PB',
                 'delta': 'De',
-                'obliteration': 'Ob'
+                'obliteration': 'Ob',
+                'avarice': 'Av'  // Added for new enchant
             };
             return abbreviations[enchantName.toLowerCase()] || 'E';
+        }
+
+        // Toast notification system
+        let toastNotificationsEnabled = true;
+        
+        function showToast(title, message, duration = 3000) {
+            if (!toastNotificationsEnabled) return;
+            
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Show toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Hide and remove toast after duration
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+        
+        function toggleToastNotifications() {
+            toastNotificationsEnabled = !toastNotificationsEnabled;
+            const btn = document.getElementById('toastToggleBtn');
+            if (toastNotificationsEnabled) {
+                btn.textContent = '🔔 Toasts ON';
+                btn.classList.add('active');
+                showToast('Toasts Enabled', 'Notifications will now appear when autoroll stops.', 2000);
+            } else {
+                btn.textContent = '🔕 Toasts OFF';
+                btn.classList.remove('active');
+            }
         }
 
         // game constants
@@ -1446,7 +1679,9 @@
               currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725652.5, priority: 1 },
             { name: 'polys blessing', type: 'blessing', value: 0, color: '#FFD700', chance: 1/500000, priority: 5 },
             { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 },
-            { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7 }
+            { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7 },
+            // New enchant: avarice
+            { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 }
         ];
 
         // SPINNER REWARDS
@@ -1547,6 +1782,7 @@
 
         // Get font for rank name
         function getRankFont(rankName) {
+            if (rankName === 'NULL') return 'null-rank';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'font-fantasy';
                 case 'giant': return 'font-giant';
@@ -1566,6 +1802,7 @@
 
         // Get index font class for rank name
         function getIndexRankFont(rankName) {
+            if (rankName === 'NULL') return 'null-rank';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'rank-fantasy';
                 case 'giant': return 'rank-giant';
@@ -1583,7 +1820,7 @@
             }
         }
 
-        // Get display text for high RNG values - UPDATED: removed 1e6 obfuscation
+        // Get display text for high RNG values
         function getRNGDisplayText(rng, isSecret = false, secretChance = 0) {
             if (rng === -500) return "-500";
             if (rng === -2932932) return "-2,932,932";
@@ -1599,7 +1836,6 @@
             if (rng >= 1e15) return "?!?!?";
             if (rng >= 1e12) return "!";
             if (rng >= 1e9) return "?????";
-            // Removed: if (rng >= 1e6) return "???";
             return null;
         }
 
@@ -1770,6 +2006,7 @@
         }
 
         function getRNGColor(rng, rankName) {
+            if (rankName === 'NULL') return 'linear-gradient(90deg, black, gray, white, gray, black)';
             if (rankName === 'solar') return 'orange';
             if (rankName === 'poly²') return '#FF00FF';
             if (rankName === 'Completionist') return '#00ffff';
@@ -1839,6 +2076,7 @@
                 if (enchant.type === 'alpha') total += applyStarBonus(0.25, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(2.5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(500, stars);
+                if (enchant.type === 'avarice') total += applyStarBonus(enchant.luck, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(10, stars);
@@ -1872,6 +2110,7 @@
                 if (enchant.type === 'alpha') total += applyStarBonus(0.5, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(20, stars);
+                if (enchant.type === 'avarice') total += applyStarBonus(enchant.secret, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(25, stars);
@@ -1903,6 +2142,7 @@
                 if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars);
                 if (enchant.type === 'delta') total -= applyStarBonus(0.5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(2, stars);
+                if (enchant.type === 'avarice') total += applyStarBonus(enchant.speed, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.25, stars);
                     else if (enchant.value === 2) total += applyStarBonus(0.5, stars);
@@ -1936,6 +2176,7 @@
                 if (enchant.type === 'alpha') total += applyStarBonus(0.125, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(1.25, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(17.5, stars);
+                if (enchant.type === 'avarice') total += applyStarBonus(enchant.variant, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(2.5, stars);
@@ -1977,6 +2218,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'addition') total += enchant.value;
+                if (enchant.type === 'avarice') total += enchant.bulk;
                 if (enchant.type === 'greed') total += 2;
                 if (enchant.type === 'patience') total += 3;
                 if (enchant.type === 'obliteration') {
@@ -2071,7 +2313,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -2123,10 +2365,28 @@
                 };
             }
             
+            const avariceChance = ENCHANT_TYPES.find(e => e.name === 'avarice').chance * (1 + enchantLuck);
+            let hasAvarice = false;
+            if (Math.random() <= avariceChance) {
+                hasAvarice = true;
+                const avariceEnchant = ENCHANT_TYPES.find(e => e.name === 'avarice');
+                generated['avarice'] = {
+                    name: avariceEnchant.name,
+                    type: avariceEnchant.type,
+                    bulk: avariceEnchant.bulk,
+                    luck: avariceEnchant.luck,
+                    speed: avariceEnchant.speed,
+                    variant: avariceEnchant.variant,
+                    secret: avariceEnchant.secret,
+                    color: avariceEnchant.color,
+                    priority: avariceEnchant.priority
+                };
+            }
+            
             ENCHANT_TYPES.forEach(enchant => {
-                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration') return;
+                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration' || enchant.name === 'avarice') return;
                 
-                if ((hasAlpha || hasDelta || hasObliteration) && shouldOverrideEnchant(enchant.name)) {
+                if ((hasAlpha || hasDelta || hasObliteration || hasAvarice) && shouldOverrideEnchant(enchant.name)) {
                     return;
                 }
                 
@@ -2303,7 +2563,7 @@
             // Remove all rank font classes
             const fontClasses = ['font-fantasy', 'font-giant', 'font-ultimate', 'font-apex', 
                                'font-omega', 'font-insane', 'font-colossal', 'font-gargantuan', 
-                               'font-hyper', 'font-insurmountable', 'font-infinitude', 'font-almighty'];
+                               'font-hyper', 'font-insurmountable', 'font-infinitude', 'font-almighty', 'null-rank'];
             fontClasses.forEach(fontClass => slot.classList.remove(fontClass));
             
             // Add rank-specific font
@@ -2339,7 +2599,7 @@
             const rankEl = slot.querySelector('.slot-rank');
             if (rankEl) {
                 // Set rank color to match RNG color (except for completionist which has its own animation)
-                if (rank !== 'Completionist') {
+                if (rank !== 'Completionist' && rank !== 'NULL') {
                     if (color.includes('gradient')) {
                         rankEl.style.background = color;
                         rankEl.style.webkitBackgroundClip = 'text';
@@ -2350,11 +2610,13 @@
                     }
                 }
                 
-                // Add special classes for solar, poly², and Completionist ranks
+                // Add special classes for solar, poly², NULL, and Completionist ranks
                 if (rank === 'solar') {
                     rankEl.classList.add('solar-rank');
                 } else if (rank === 'poly²') {
                     rankEl.classList.add('poly-squared-rank');
+                } else if (rank === 'NULL') {
+                    rankEl.classList.add('null-rank');
                 } else if (rank === 'Completionist') {
                     rankEl.classList.add('completionist-rank');
                     // Start the completionist animation for this slot
@@ -2366,7 +2628,7 @@
             const valueEl = slot.querySelector('.slot-value');
             if (shouldObfuscate(finalRng) && !displayText) {
                 valueEl.classList.add('obfuscating');
-                if (rankEl) {
+                if (rankEl && rank !== 'NULL' && rank !== 'Completionist') {
                     rankEl.classList.add('obfuscating');
                 }
             }
@@ -2382,7 +2644,7 @@
                 starIndicator.textContent = '⭐'.repeat(stars);
             }
             
-            // Add enchant indicator if present - FIXED: Positioned to not cover rank
+            // Add enchant indicator if present
             if (generatedEnchants && generatedEnchants.length > 0) {
                 let enchantIndicator = slot.querySelector('.slot-enchant');
                 if (!enchantIndicator) {
@@ -2451,6 +2713,18 @@
                                 color: enchant.color,
                                 priority: enchant.priority
                             };
+                        } else if (enchant.type === 'avarice') {
+                            return {
+                                name: enchant.name,
+                                type: enchant.type,
+                                bulk: enchant.bulk,
+                                luck: enchant.luck,
+                                speed: enchant.speed,
+                                variant: enchant.variant,
+                                secret: enchant.secret,
+                                color: enchant.color,
+                                priority: enchant.priority
+                            };
                         }
                         return { ...enchant };
                     }),
@@ -2498,6 +2772,7 @@
             updateInventory();
             updateEnchantInventory();
             updateMergeSelects();
+            updateBottomStats();
             updateUI();
             saveGame();
         }
@@ -2541,22 +2816,25 @@
         function deleteInventoryItem(index) {
             inventory.splice(index, 1);
             updateInventory();
+            updateBottomStats();
             saveGame();
         }
 
         function deleteEnchantOrb(index) {
+            // FIXED: Don't call updateSlots() when deleting enchants
             if (equippedOrb && enchantOrbs[index].id === equippedOrb.id) {
                 equippedOrb = null;
             }
             enchantOrbs.splice(index, 1);
             updateEnchantInventory();
             updateMergeSelects();
+            updateBottomStats();
             updateUI();
-            updateSlots();
             saveGame();
         }
 
         function equipEnchantOrb(index) {
+            // FIXED: Don't call updateSlots() when equipping enchants
             equippedOrb = enchantOrbs[index];
             
             if (!equippedOrb.rollsWithOvertime) {
@@ -2564,16 +2842,17 @@
             }
             
             updateEnchantInventory();
+            updateBottomStats();
             updateUI();
-            updateSlots();
             saveGame();
         }
 
         function unequipEnchantOrb() {
+            // FIXED: Don't call updateSlots() when unequipping enchants
             equippedOrb = null;
             updateEnchantInventory();
+            updateBottomStats();
             updateUI();
-            updateSlots();
             saveGame();
         }
 
@@ -2629,6 +2908,7 @@
             updateEnchantInventory();
             updateMergeSelects();
             updateIndex();
+            updateBottomStats();
             updateUI();
             saveGame();
             
@@ -2841,8 +3121,23 @@
                         viewport.scrollLeft = slotLeft - (viewportWidth / 2) + (slotWidth / 2);
                     }
                     
-                    // Pause autoroll if needed
+                    // Pause autoroll if needed and show toast
                     if (isAutorolling && (foundRNGToPause || foundSecretToPause || foundEnchantToPause)) {
+                        let toastTitle = 'Autoroll Paused';
+                        let toastMessage = '';
+                        
+                        if (foundRNGToPause) {
+                            const roll = generatedRolls[pausedSlotIndex];
+                            toastMessage = `RNG ≥ ${formatNumber(pauseRNGThreshold)}: ${formatNumber(roll.finalRng)}`;
+                        } else if (foundSecretToPause) {
+                            const roll = generatedRolls[pausedSlotIndex];
+                            toastMessage = `Secret rarity ≥ ${formatNumber(pauseSecretRarityThreshold)}: ${roll.rank}`;
+                        } else if (foundEnchantToPause) {
+                            const roll = generatedRolls[pausedSlotIndex];
+                            toastMessage = `Enchant rarity ≥ ${formatNumber(pauseEnchantRarityThreshold)}: ${roll.enchants.map(e => e.name).join(', ')}`;
+                        }
+                        
+                        showToast(toastTitle, toastMessage, 5000);
                         toggleAutoroll();
                     }
                 } else {
@@ -2860,6 +3155,7 @@
                     }
                 }
                 
+                updateBottomStats();
                 updateUI();
                 updateIndex();
                 saveGame();
@@ -2934,6 +3230,7 @@
                 ultimatiplierLevel++;
                 ultimatiplierCost = Math.floor(ultimatiplierCost * 1.2);
             }
+            updateBottomStats();
             updateUI();
             saveGame();
         }
@@ -2942,6 +3239,7 @@
             if (minSpeedUpgrades >= 4 || tickets < 5) return;
             tickets -= 5;
             minSpeedUpgrades++;
+            updateBottomStats();
             updateUI();
             saveGame();
         }
@@ -2952,6 +3250,7 @@
             ticketProdLevel++;
             ticketProdCost *= 10;
             startTicketTimer();
+            updateBottomStats();
             updateUI();
             saveGame();
         }
@@ -2963,6 +3262,7 @@
             document.getElementById('spinnerSection').style.display = 'block';
             document.getElementById('spinBtn').disabled = tickets < 5;
             createSpinnerWheel();
+            updateBottomStats();
             updateUI();
             saveGame();
         }
@@ -3074,6 +3374,7 @@
                 enchantOrbs.push(orb);
                 updateEnchantInventory();
                 updateMergeSelects();
+                updateBottomStats();
                 updateUI();
                 saveGame();
                 
@@ -3129,7 +3430,7 @@
                 }
                 
                 return `
-                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : ''}">
+                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'NULL' ? 'null-rank' : ''}">
                         <div class="tier-name">${tier.name}</div>
                         <div class="tier-stars">${tier.stars}★</div>
                         <div>
@@ -3164,6 +3465,14 @@
                 return `+${val.toFixed(1)} variant luck${starBonus}`;
             }
             if (enchant.type === 'addition') return `+${enchant.value} bulk roll`;
+            if (enchant.type === 'avarice') {
+                const bulk = applyStarBonus(enchant.bulk, stars);
+                const luck = applyStarBonus(enchant.luck, stars);
+                const speed = applyStarBonus(enchant.speed, stars);
+                const variant = applyStarBonus(enchant.variant, stars);
+                const secret = applyStarBonus(enchant.secret, stars);
+                return `+${bulk.toFixed(0)} bulk, ${luck.toFixed(1)} luck, ${speed.toFixed(1)}s speed, ${variant.toFixed(1)} variant, ${secret.toFixed(1)} secret${starBonus}`;
+            }
             if (enchant.type === 'requiem') {
                 if (enchant.value === 1) {
                     const luck = applyStarBonus(5, stars);
@@ -3391,7 +3700,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -3443,7 +3752,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -3494,6 +3803,7 @@
             
             updateEnchantInventory();
             updateMergeSelects();
+            updateBottomStats();
             updateUI();
             saveGame();
             
@@ -3531,14 +3841,16 @@
                 let specialNote = '';
                 if (s.name === 'solar') specialNote = ' (replaces eclipse, x100,000)';
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
-                if (s.name === 'poly²') specialNote = ''; // Removed the extra text
-                if (s.name === 'NULL') specialNote = ''; // Removed the extra text
+                if (s.name === 'poly²') specialNote = '';
+                if (s.name === 'NULL') specialNote = '';
                 
                 // Apply color to secret name
                 let secretColor = '#ff69b4';
                 if (s.name === 'solar') secretColor = 'orange';
                 if (s.name === 'poly²') secretColor = '#FF00FF';
-                if (s.name === 'NULL') secretColor = 'gray';
+                if (s.name === 'NULL') {
+                    return `<div class="index-item null-rank"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
+                }
                 if (s.name === 'Completionist') {
                     return `<div class="index-item completionist-index"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
                 }
@@ -3563,6 +3875,7 @@
                 if (enchant.type === 'overtime') effect = `+0.001 luck, +0.001s speed, +0.001 variant, +0.001 secret (grows per roll)`;
                 if (enchant.type === 'blessing') effect = `1/333,333 chance for poly² (RNG: -2,932,932)`;
                 if (enchant.type === 'obliteration') effect = `-1000 bulk (sets to 1), +500 luck, +20 secret, +2s speed, +17.5 variant`;
+                if (enchant.type === 'avarice') effect = `+${enchant.bulk} bulk roll, ${enchant.luck} luck, ${enchant.speed}s speed, ${enchant.variant} variant luck, ${enchant.secret} secret luck`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant, +1 bulk';
                     else if (enchant.value === 2) effect = '+10 luck, +0.5s speed, +25 secret, +2.5 variant, +2 bulk';
@@ -3579,6 +3892,32 @@
         function calculateInvCost() {
             if (invLevel === 0) return 0;
             return Math.floor(20 * Math.log(invLevel) / Math.log(3));
+        }
+
+        function updateBottomStats() {
+            const statsGrid = document.getElementById('bottomStatsGrid');
+            
+            const stats = [
+                { title: 'Total Polycoin Earned', value: formatNumber(polycoin + inventory.reduce((sum, item) => sum + (item.finalRng > 0 ? Math.floor(Math.pow(item.finalRng, 0.8) * 0.75) : 0), 0)) },
+                { title: 'Average Roll RNG', value: formatNumber(totalRolls > 0 ? (inventory.reduce((sum, item) => sum + item.finalRng, 0) / inventory.length) || 0 : 0) },
+                { title: 'Rolls per Minute', value: formatNumber(Math.round(totalRolls / (Date.now() - gameStartTime) * 60000)) || '0' },
+                { title: 'Total Enchants Found', value: formatNumber(enchantOrbs.reduce((sum, orb) => sum + orb.enchants.length, 0)) },
+                { title: 'Average Enchant Stars', value: formatNumber(enchantOrbs.length > 0 ? (enchantOrbs.reduce((sum, orb) => sum + (orb.stars || 0), 0) / enchantOrbs.length).toFixed(2) : '0.00') },
+                { title: 'Secrets Discovered', value: `${discovered.secrets.size}/${SECRETS.length}` },
+                { title: 'Variants Discovered', value: `${discovered.variants.size}/${VARIANTS.length}` },
+                { title: 'Ranks Discovered', value: `${discovered.ranks.size}/${RANKS.length + SECRETS.length}` },
+                { title: 'Enchants Discovered', value: `${discovered.enchants.size}/${ENCHANT_TYPES.length}` },
+                { title: 'Highest Inventory Tier', value: inventory.length > 0 ? getInventoryTier(Math.max(...inventory.map(i => i.finalRng))).name : 'None' },
+                { title: 'Equipped Enchant Power', value: equippedOrb ? formatNumber(equippedOrb.enchants.reduce((sum, e) => sum + (e.value || e.bulk || 0), 0)) : '0' },
+                { title: 'Active Upgrades', value: formatNumber(bulkLevel + luckLevel + secretLevel + speedLevel + invLevel + enchantLuckLevel + variantLuckLevel + eterniumLevel + ultimatiplierLevel) }
+            ];
+            
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-item">
+                    <div class="stat-item-title">${stat.title}</div>
+                    <div class="stat-item-value">${stat.value}</div>
+                </div>
+            `).join('');
         }
 
         function updateUI() {
@@ -3650,11 +3989,14 @@
             document.getElementById('spinBtn').disabled = !spinnerUnlocked || tickets < 5;
         }
 
+        let gameStartTime = Date.now();
+        
         function startTicketTimer() {
             if (ticketInterval) clearInterval(ticketInterval);
             const ticketsPerMinute = 1 + ticketProdLevel;
             ticketInterval = setInterval(() => {
                 tickets += ticketsPerMinute;
+                updateBottomStats();
                 updateUI();
                 saveGame();
             }, 60000);
@@ -3716,6 +4058,18 @@
                                     color: e.color,
                                     priority: e.priority
                                 };
+                            } else if (e.type === 'avarice') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    bulk: e.bulk,
+                                    luck: e.luck,
+                                    speed: e.speed,
+                                    variant: e.variant,
+                                    secret: e.secret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
                             }
                             return {
                                 name: e.name,
@@ -3741,6 +4095,18 @@
                                     currentSpeed: e.currentSpeed,
                                     currentVariant: e.currentVariant,
                                     currentSecret: e.currentSecret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'avarice') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    bulk: e.bulk,
+                                    luck: e.luck,
+                                    speed: e.speed,
+                                    variant: e.variant,
+                                    secret: e.secret,
                                     color: e.color,
                                     priority: e.priority
                                 };
@@ -3777,6 +4143,18 @@
                                     color: e.color,
                                     priority: e.priority
                                 };
+                            } else if (e.type === 'avarice') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    bulk: e.bulk,
+                                    luck: e.luck,
+                                    speed: e.speed,
+                                    variant: e.variant,
+                                    secret: e.secret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
                             }
                             return {
                                 name: e.name,
@@ -3791,7 +4169,9 @@
                         stars: equippedOrb.stars || 0,
                         locked: equippedOrb.locked || false,
                         rollsWithOvertime: equippedOrb.rollsWithOvertime || 0
-                    } : null
+                    } : null,
+                    toastNotificationsEnabled,
+                    gameStartTime: gameStartTime || Date.now()
                 };
                 localStorage.setItem('polys-rng-save2', JSON.stringify(saveData));
             } catch (error) {
@@ -3838,6 +4218,18 @@
                     document.getElementById('cooldownThreshold').value = cooldownThreshold;
                     document.getElementById('cooldownTime').value = cooldownTime;
                     
+                    toastNotificationsEnabled = saveData.toastNotificationsEnabled !== undefined ? saveData.toastNotificationsEnabled : true;
+                    const toastBtn = document.getElementById('toastToggleBtn');
+                    if (toastNotificationsEnabled) {
+                        toastBtn.textContent = '🔔 Toasts ON';
+                        toastBtn.classList.add('active');
+                    } else {
+                        toastBtn.textContent = '🔕 Toasts OFF';
+                        toastBtn.classList.remove('active');
+                    }
+                    
+                    gameStartTime = saveData.gameStartTime || Date.now();
+                    
                     if (saveData.discovered) {
                         discovered.variants = new Set(saveData.discovered.variants || []);
                         discovered.ranks = new Set(saveData.discovered.ranks || []);
@@ -3877,6 +4269,7 @@
             updateEnchantInventory();
             updateMergeSelects();
             updateIndex();
+            updateBottomStats();
             updateUI();
             
             if (spinnerUnlocked) {
@@ -3889,6 +4282,7 @@
         updateSlots();
         updateUI();
         updateIndex();
+        updateBottomStats();
         updateMergeSelects();
         initDragScrolling();
         
