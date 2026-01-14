@@ -1006,11 +1006,20 @@
             color: #FF00FF !important;
             animation: pulse 1s infinite;
         }
+        .ahur-yp-rank {
+            color: #9b30ff !important;
+            animation: ahur-yp-pulse 0.5s infinite alternate;
+        }
         
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
             100% { opacity: 1; }
+        }
+        
+        @keyframes ahur-yp-pulse {
+            0% { opacity: 1; text-shadow: 0 0 5px #9b30ff; }
+            100% { opacity: 0.8; text-shadow: 0 0 15px #9b30ff; }
         }
         
         .tickets-upgrades {
@@ -1529,7 +1538,7 @@
                 'polys blessing': 'PB',
                 'delta': 'De',
                 'obliteration': 'Ob',
-                'avarice': 'Av'  // Added for new enchant
+                'avarice': 'Av'
             };
             return abbreviations[enchantName.toLowerCase()] || 'E';
         }
@@ -1647,7 +1656,8 @@
             { name: 'solar', chance: 100000 },
             { name: 'poly²', chance: 333333 },
             { name: 'NULL', chance: 229172 },
-            { name: 'Completionist', chance: 1000000 }
+            { name: 'Completionist', chance: 1000000 },
+            { name: 'ahur yp', chance: 694200 } // NEW SECRET RANK - fixed chance, unaffected by boosts
         ];
 
         const ENCHANT_TYPES = [
@@ -1680,7 +1690,6 @@
             { name: 'polys blessing', type: 'blessing', value: 0, color: '#FFD700', chance: 1/500000, priority: 5 },
             { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 },
             { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7 },
-            // New enchant: avarice
             { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 }
         ];
 
@@ -1753,6 +1762,9 @@
         let ultimatiplierLevel = 0;
         let ultimatiplierCost = 100;
         
+        // FIXED: Initialize gameStartTime here at the top
+        let gameStartTime = Date.now();
+        
         // Variables for centering when autoroll stops
         let pausedSlotIndex = -1;
 
@@ -1783,6 +1795,7 @@
         // Get font for rank name
         function getRankFont(rankName) {
             if (rankName === 'NULL') return 'null-rank';
+            if (rankName === 'ahur yp') return 'font-almighty'; // Use almighty font for ahur yp
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'font-fantasy';
                 case 'giant': return 'font-giant';
@@ -1803,6 +1816,7 @@
         // Get index font class for rank name
         function getIndexRankFont(rankName) {
             if (rankName === 'NULL') return 'null-rank';
+            if (rankName === 'ahur yp') return 'rank-almighty'; // Use almighty font for ahur yp
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'rank-fantasy';
                 case 'giant': return 'rank-giant';
@@ -1941,6 +1955,13 @@
                     span.style.color = color;
                 });
                 
+                // Update completionist items in index
+                const completionistIndexItems = document.querySelectorAll('.index-item.completionist-index');
+                completionistIndexItems.forEach(item => {
+                    const color = getRNGColorForFontIndex(completionistFontIndex);
+                    item.style.color = color;
+                });
+                
             }, 10); // Every 10ms
         }
 
@@ -2010,6 +2031,7 @@
             if (rankName === 'solar') return 'orange';
             if (rankName === 'poly²') return '#FF00FF';
             if (rankName === 'Completionist') return '#00ffff';
+            if (rankName === 'ahur yp') return '#9b30ff'; // Purple color for ahur yp
             if (rng < 1000) return '#aad7e6';
             if (rng < 10000) return '#ffc0cb';
             if (rng < 100000) return '#90ee90';
@@ -2281,6 +2303,11 @@
                 }
             }
             
+            // Check for ahur yp first (fixed chance, unaffected by boosts)
+            if (random <= 1/694200) {
+                return 'ahur yp';
+            }
+            
             // Check for NULL first (true RNG secret, always replaces)
             if (random <= 1/229172) {
                 return 'NULL';
@@ -2302,7 +2329,9 @@
             }
             
             for (let i = SECRETS.length - 1; i >= 0; i--) {
-                if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar' || SECRETS[i].name === 'poly²' || SECRETS[i].name === 'NULL') continue;
+                if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar' || 
+                    SECRETS[i].name === 'poly²' || SECRETS[i].name === 'NULL' || 
+                    SECRETS[i].name === 'ahur yp') continue;
                 
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
@@ -2551,7 +2580,6 @@
             detailsContainer.style.display = 'block';
         }
 
-        // FIXED: displaySlot function - fixed rank display and obfuscation animation
         function displaySlot(index, baseRng, finalRng, rank, variant, generatedEnchants, stars, isSecret, secretChance) {
             const slot = document.getElementById(`slot-${index}`);
             if (!slot) return;
@@ -2598,8 +2626,8 @@
             // Apply special styles for the rank element
             const rankEl = slot.querySelector('.slot-rank');
             if (rankEl) {
-                // Set rank color to match RNG color (except for completionist which has its own animation)
-                if (rank !== 'Completionist' && rank !== 'NULL') {
+                // Set rank color to match RNG color (except for special ranks which have their own animations)
+                if (rank !== 'Completionist' && rank !== 'NULL' && rank !== 'ahur yp') {
                     if (color.includes('gradient')) {
                         rankEl.style.background = color;
                         rankEl.style.webkitBackgroundClip = 'text';
@@ -2610,7 +2638,7 @@
                     }
                 }
                 
-                // Add special classes for solar, poly², NULL, and Completionist ranks
+                // Add special classes for special ranks
                 if (rank === 'solar') {
                     rankEl.classList.add('solar-rank');
                 } else if (rank === 'poly²') {
@@ -2621,6 +2649,10 @@
                     rankEl.classList.add('completionist-rank');
                     // Start the completionist animation for this slot
                     slot.classList.add('completionist-animating');
+                } else if (rank === 'ahur yp') {
+                    rankEl.classList.add('ahur-yp-rank');
+                    rankEl.style.color = '#9b30ff';
+                    rankEl.style.textShadow = '0 0 10px #9b30ff';
                 }
             }
             
@@ -2628,7 +2660,7 @@
             const valueEl = slot.querySelector('.slot-value');
             if (shouldObfuscate(finalRng) && !displayText) {
                 valueEl.classList.add('obfuscating');
-                if (rankEl && rank !== 'NULL' && rank !== 'Completionist') {
+                if (rankEl && rank !== 'NULL' && rank !== 'Completionist' && rank !== 'ahur yp') {
                     rankEl.classList.add('obfuscating');
                 }
             }
@@ -2682,9 +2714,6 @@
             if (!pendingRolls[index]) return;
             
             const maxSlots = 10 + invLevel;
-            
-            // FIX: You can accept more than one based on your Actual Bulk Roll
-            // We already allow accepting multiple slots individually, so this is fine
             
             // Add to inventory
             inventory.unshift({
@@ -2821,7 +2850,6 @@
         }
 
         function deleteEnchantOrb(index) {
-            // FIXED: Don't call updateSlots() when deleting enchants
             if (equippedOrb && enchantOrbs[index].id === equippedOrb.id) {
                 equippedOrb = null;
             }
@@ -2834,7 +2862,6 @@
         }
 
         function equipEnchantOrb(index) {
-            // FIXED: Don't call updateSlots() when equipping enchants
             equippedOrb = enchantOrbs[index];
             
             if (!equippedOrb.rollsWithOvertime) {
@@ -2848,7 +2875,6 @@
         }
 
         function unequipEnchantOrb() {
-            // FIXED: Don't call updateSlots() when unequipping enchants
             equippedOrb = null;
             updateEnchantInventory();
             updateBottomStats();
@@ -3000,6 +3026,8 @@
                         finalRng = -500;
                     } else if (secret === 'NULL') {
                         finalRng = baseRng; // NULL replaces the rank but keeps RNG value
+                    } else if (secret === 'ahur yp') {
+                        finalRng = 694200; // Fixed TRNG value for ahur yp
                     } else {
                         finalRng = baseRng * variant.multipliesRNG;
                     }
@@ -3012,7 +3040,7 @@
                     discovered.ranks.add(rankName);
                     if (secret) discovered.secrets.add(secret);
                     
-                    const gain = (secret === 'Completionist' || secret === 'poly²' || secret === 'NULL') ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
+                    const gain = (secret === 'Completionist' || secret === 'poly²' || secret === 'NULL' || secret === 'ahur yp') ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
                     rollCoins += 1;
                     totalRolls++;
@@ -3430,7 +3458,7 @@
                 }
                 
                 return `
-                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'NULL' ? 'null-rank' : ''}">
+                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'NULL' ? 'null-rank' : item.rank === 'ahur yp' ? 'ahur-yp-rank' : ''}">
                         <div class="tier-name">${tier.name}</div>
                         <div class="tier-stars">${tier.stars}★</div>
                         <div>
@@ -3843,6 +3871,7 @@
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
                 if (s.name === 'poly²') specialNote = '';
                 if (s.name === 'NULL') specialNote = '';
+                if (s.name === 'ahur yp') specialNote = ' (fixed TRNG: 694200, unaffected by boosts)';
                 
                 // Apply color to secret name
                 let secretColor = '#ff69b4';
@@ -3853,6 +3882,9 @@
                 }
                 if (s.name === 'Completionist') {
                     return `<div class="index-item completionist-index"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
+                }
+                if (s.name === 'ahur yp') {
+                    return `<div class="index-item rank-almighty"><span style="${style}">${icon}</span> <span style="color: #9b30ff; text-shadow: 0 0 5px #9b30ff;">${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
                 }
                 
                 return `<div class="index-item"><span style="${style}">${icon}</span> <span style="color: ${secretColor}">${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
@@ -3897,10 +3929,14 @@
         function updateBottomStats() {
             const statsGrid = document.getElementById('bottomStatsGrid');
             
+            // FIXED: Calculate time elapsed safely
+            const timeElapsed = Date.now() - gameStartTime;
+            const rollsPerMinute = timeElapsed > 0 ? Math.round(totalRolls / (timeElapsed / 60000)) : 0;
+            
             const stats = [
                 { title: 'Total Polycoin Earned', value: formatNumber(polycoin + inventory.reduce((sum, item) => sum + (item.finalRng > 0 ? Math.floor(Math.pow(item.finalRng, 0.8) * 0.75) : 0), 0)) },
-                { title: 'Average Roll RNG', value: formatNumber(totalRolls > 0 ? (inventory.reduce((sum, item) => sum + item.finalRng, 0) / inventory.length) || 0 : 0) },
-                { title: 'Rolls per Minute', value: formatNumber(Math.round(totalRolls / (Date.now() - gameStartTime) * 60000)) || '0' },
+                { title: 'Average Roll RNG', value: formatNumber(inventory.length > 0 ? (inventory.reduce((sum, item) => sum + item.finalRng, 0) / inventory.length) || 0 : 0) },
+                { title: 'Rolls per Minute', value: formatNumber(rollsPerMinute) },
                 { title: 'Total Enchants Found', value: formatNumber(enchantOrbs.reduce((sum, orb) => sum + orb.enchants.length, 0)) },
                 { title: 'Average Enchant Stars', value: formatNumber(enchantOrbs.length > 0 ? (enchantOrbs.reduce((sum, orb) => sum + (orb.stars || 0), 0) / enchantOrbs.length).toFixed(2) : '0.00') },
                 { title: 'Secrets Discovered', value: `${discovered.secrets.size}/${SECRETS.length}` },
@@ -3988,8 +4024,6 @@
             
             document.getElementById('spinBtn').disabled = !spinnerUnlocked || tickets < 5;
         }
-
-        let gameStartTime = Date.now();
         
         function startTicketTimer() {
             if (ticketInterval) clearInterval(ticketInterval);
@@ -4228,6 +4262,7 @@
                         toastBtn.classList.remove('active');
                     }
                     
+                    // FIXED: Set gameStartTime from save or current time
                     gameStartTime = saveData.gameStartTime || Date.now();
                     
                     if (saveData.discovered) {
