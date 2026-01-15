@@ -331,13 +331,14 @@
         .slot.font-infinitude { font-family: 'Kaushan Script', cursive; }
         .slot.font-almighty { font-family: 'Bungee', cursive; }
         
-        /* NULL secret special styling */
-        .slot.null-secret {
+        /* NULL and eradicate secret special styling */
+        .slot.null-secret, .slot.eradicate-secret {
             border: 2px solid;
             border-image: linear-gradient(90deg, white, black) 1;
         }
         
-        .slot.null-secret .slot-value {
+        .slot.null-secret .slot-value,
+        .slot.eradicate-secret .slot-value {
             color: gray !important;
             font-family: 'Tangerine', cursive !important;
             font-size: 28px !important; /* x2 bigger */
@@ -350,7 +351,8 @@
             height: auto !important;
         }
         
-        .slot.null-secret .slot-rank {
+        .slot.null-secret .slot-rank,
+        .slot.eradicate-secret .slot-rank {
             font-size: 18px !important; /* x2 bigger */
             font-weight: bold !important;
             color: gray !important;
@@ -358,6 +360,20 @@
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
             background-clip: text !important;
+        }
+        
+        /* Apocalyptic enchant text shake */
+        .slot.apocalyptic-shake .slot-value,
+        .slot.apocalyptic-shake .slot-rank {
+            animation: apocalyptic-shake 0.02s infinite;
+        }
+        
+        @keyframes apocalyptic-shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-15px, 15px); }
+            50% { transform: translate(15px, -15px); }
+            75% { transform: translate(-15px, -15px); }
+            100% { transform: translate(15px, 15px); }
         }
         
         /* Completionist animation */
@@ -470,7 +486,8 @@
             color: #FF00FF !important;
             animation: pulse 1s infinite;
         }
-        .slot-rank.null-rank {
+        .slot-rank.null-rank,
+        .slot-rank.eradicate-rank {
             font-size: 18px !important;
             font-weight: bold !important;
             background: linear-gradient(90deg, black, gray, white, gray, black) !important;
@@ -908,7 +925,8 @@
         .index-item.rank-insurmountable { font-family: 'Gloria Hallelujah', cursive; }
         .index-item.rank-infinitude { font-family: 'Kaushan Script', cursive; }
         .index-item.rank-almighty { font-family: 'Bungee', cursive; }
-        .index-item.null-rank {
+        .index-item.null-rank,
+        .index-item.eradicate-rank {
             font-family: 'Tangerine', cursive !important;
             font-weight: bold;
             background: linear-gradient(90deg, black, gray, white, gray, black) !important;
@@ -1009,6 +1027,12 @@
         .ahur-yp-rank {
             color: #9b30ff !important;
             animation: ahur-yp-pulse 0.5s infinite alternate;
+        }
+        .eradicate-rank {
+            background: linear-gradient(90deg, black, gray, white, gray, black) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
         }
         
         @keyframes pulse {
@@ -1538,7 +1562,8 @@
                 'polys blessing': 'PB',
                 'delta': 'De',
                 'obliteration': 'Ob',
-                'avarice': 'Av'
+                'avarice': 'Av',
+                'apocalyptic': 'Ap'
             };
             return abbreviations[enchantName.toLowerCase()] || 'E';
         }
@@ -1657,40 +1682,42 @@
             { name: 'poly²', chance: 333333 },
             { name: 'NULL', chance: 229172 },
             { name: 'Completionist', chance: 1000000 },
-            { name: 'ahur yp', chance: 694200 } // NEW SECRET RANK - fixed chance, unaffected by boosts
+            { name: 'ahur yp', chance: 694200 },
+            { name: 'eradicate', chance: 656565 } // NEW SECRET - true RNG, only with obliteration
         ];
 
         const ENCHANT_TYPES = [
             { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5, priority: 1 },
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5, priority: 2 },
-            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/12500, priority: 3 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/12500, priority: 3, special: '1/100 chance for x100 RNG' },
             { name: 'speed i', type: 'speed', value: 0.25, color: '#87ceeb', chance: 1/2.5, priority: 1 },
             { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', chance: 1/10, priority: 2 },
-            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/7500, priority: 3 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/7500, priority: 3, special: 'bypass rollspeed (capped at 0.001s)' },
             { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10, priority: 1 },
             { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50, priority: 2 },
-            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/25000, priority: 3 },
+            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/25000, priority: 3, special: 'x1.5 true RNG luck' },
             { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500, priority: 1 },
             { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/10000, priority: 2 },
             { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/10000000, priority: 3 },
             { name: 'variant i', type: 'variant', value: 0.5, color: '#ffc0cb', chance: 1/25, priority: 1 },
             { name: 'variant ii', type: 'variant', value: 2.5, color: '#ff69b4', chance: 1/100, priority: 2 },
-            { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/33333, priority: 3 },
+            { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/33333, priority: 3, special: 'guarantee 10k+ variant every 50 rolls' },
             { name: 'addition i', type: 'addition', value: 1, color: '#ffaa00', chance: 1/25, priority: 1 },
             { name: 'addition ii', type: 'addition', value: 2, color: '#ff8800', chance: 1/75, priority: 2 },
-            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/5000, priority: 3 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/5000, priority: 3, special: '1/500 chance to quintuple bulk for 10s' },
             { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60, priority: 1 },
             { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 },
             { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
             { name: 'weird i', type: 'weird', value: 1.2, color: '#ff00ff', chance: 1/500, priority: 1 },
             { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
-            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3 },
+            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/500000, priority: 3, special: 'x10 variant luck for 1 roll every 100 rolls' },
             { name: 'overtime', type: 'overtime', baseLuck: 0.001, baseSpeed: 0.001, baseVariant: 0.001, baseSecret: 0.001, 
               currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725652.5, priority: 1 },
             { name: 'polys blessing', type: 'blessing', value: 0, color: '#FFD700', chance: 1/500000, priority: 5 },
             { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 },
-            { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7 },
-            { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 }
+            { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7, enchantLuck: 12.5 },
+            { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 },
+            { name: 'apocalyptic', type: 'apocalyptic', color: '#8B0000', chance: 1/999999, priority: 9, special: 'text shakes' }
         ];
 
         // SPINNER REWARDS
@@ -1762,6 +1789,16 @@
         let ultimatiplierLevel = 0;
         let ultimatiplierCost = 100;
         
+        // Special effect trackers
+        let hasObliteration = false;
+        let insanityRNGMultiplier = 1;
+        let endlessBulkMultiplier = 1;
+        let endlessBulkTimer = 0;
+        let unusualityRollCounter = 0;
+        let abnormalVariantBoost = 1;
+        let abnormalRollCounter = 0;
+        let apocalypticRNGMultiplier = 1;
+        
         // FIXED: Initialize gameStartTime here at the top
         let gameStartTime = Date.now();
         
@@ -1794,8 +1831,8 @@
 
         // Get font for rank name
         function getRankFont(rankName) {
-            if (rankName === 'NULL') return 'null-rank';
-            if (rankName === 'ahur yp') return 'font-almighty'; // Use almighty font for ahur yp
+            if (rankName === 'NULL' || rankName === 'eradicate') return 'null-rank';
+            if (rankName === 'ahur yp') return 'font-almighty';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'font-fantasy';
                 case 'giant': return 'font-giant';
@@ -1815,8 +1852,8 @@
 
         // Get index font class for rank name
         function getIndexRankFont(rankName) {
-            if (rankName === 'NULL') return 'null-rank';
-            if (rankName === 'ahur yp') return 'rank-almighty'; // Use almighty font for ahur yp
+            if (rankName === 'NULL' || rankName === 'eradicate') return 'null-rank';
+            if (rankName === 'ahur yp') return 'rank-almighty';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'rank-fantasy';
                 case 'giant': return 'rank-giant';
@@ -2027,11 +2064,11 @@
         }
 
         function getRNGColor(rng, rankName) {
-            if (rankName === 'NULL') return 'linear-gradient(90deg, black, gray, white, gray, black)';
+            if (rankName === 'NULL' || rankName === 'eradicate') return 'linear-gradient(90deg, black, gray, white, gray, black)';
             if (rankName === 'solar') return 'orange';
             if (rankName === 'poly²') return '#FF00FF';
             if (rankName === 'Completionist') return '#00ffff';
-            if (rankName === 'ahur yp') return '#9b30ff'; // Purple color for ahur yp
+            if (rankName === 'ahur yp') return '#9b30ff';
             if (rng < 1000) return '#aad7e6';
             if (rng < 10000) return '#ffc0cb';
             if (rng < 100000) return '#90ee90';
@@ -2068,15 +2105,31 @@
         }
 
         function calculateRNG() {
+            // Reset special multipliers for this roll
+            insanityRNGMultiplier = 1;
+            apocalypticRNGMultiplier = 1;
+            
             const luck = luckLevel * 0.5 + getTotalEnchantLuck();
             let rng = Math.random() ** (-1.3 - (luck * 0.01));
             
             // Apply Ultimatiplier chance
             if (ultimatiplierLevel > 0) {
-                const ultimatiplierChance = ultimatiplierLevel * 0.0005; // 0.05% per level
+                const ultimatiplierChance = ultimatiplierLevel * 0.0005;
                 if (Math.random() < ultimatiplierChance) {
-                    rng *= 5; // x5 RNG
+                    rng *= 5;
                 }
+            }
+            
+            // Apply insanity 1/100 chance for x100 better
+            if (Math.random() < 0.01) {
+                insanityRNGMultiplier = 100;
+                rng *= 100;
+            }
+            
+            // Apply apocalyptic 1/100 chance for x1000 better
+            if (Math.random() < 0.01) {
+                apocalypticRNGMultiplier = 1000;
+                rng *= 1000;
             }
             
             return Math.max(1, rng);
@@ -2115,6 +2168,14 @@
                     else if (rolls >= 1000) factor = 0.75;
                     
                     total += applyStarBonus(enchant.currentLuck * factor, stars);
+                }
+                if (enchant.type === 'omnipotence') {
+                    // x1.5 true RNG luck
+                    total *= 1.5;
+                }
+                if (enchant.type === 'apocalyptic') {
+                    // +500 luck from apocalyptic
+                    total += 500;
                 }
             });
             
@@ -2182,7 +2243,17 @@
                     
                     total += applyStarBonus(enchant.currentSpeed * factor, stars);
                 }
+                if (enchant.type === 'apocalyptic') {
+                    // +10 roll speed reduction from apocalyptic
+                    total += 10;
+                }
             });
+            
+            // Check for blitz enchant - bypass rollspeed capped at 0.001
+            const hasBlitz = equippedOrb && equippedOrb.enchants.some(e => e.type === 'speed' && e.name === 'blitz');
+            if (hasBlitz) {
+                total = 1000; // Large enough to guarantee 0.001s
+            }
             
             return total;
         }
@@ -2217,6 +2288,11 @@
                 }
             });
             
+            // Apply abnormal x10 variant luck for one roll every 100 rolls
+            if (abnormalVariantBoost > 1) {
+                total *= abnormalVariantBoost;
+            }
+            
             return total;
         }
 
@@ -2228,6 +2304,9 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'weird') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'obliteration' && enchant.enchantLuck) {
+                    total += applyStarBonus(enchant.enchantLuck, stars);
+                }
             });
             
             return total;
@@ -2236,7 +2315,7 @@
         function getTotalBulkRolls() {
             let total = Math.min(bulkLevel, 100);
             
-            if (!equippedOrb) return total;
+            if (!equippedOrb) return total * endlessBulkMultiplier;
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'addition') total += enchant.value;
@@ -2251,6 +2330,10 @@
                     else if (enchant.value === 2) total += 2;
                     else if (enchant.value === 3) total += 5;
                 }
+                if (enchant.type === 'apocalyptic') {
+                    // +5 bulk roll from apocalyptic
+                    total += 5;
+                }
             });
             
             // Check for obliteration enchant which sets bulk to 1
@@ -2261,13 +2344,16 @@
             
             // Apply Eternium chance for double bulk
             if (eterniumLevel > 0) {
-                const eterniumChance = eterniumLevel * 0.05; // 5% per level
+                const eterniumChance = eterniumLevel * 0.05;
                 if (Math.random() < eterniumChance) {
                     total *= 2;
                 }
             }
             
-            return Math.min(total, 200); // Cap at 200
+            // Apply endless bulk multiplier
+            total *= endlessBulkMultiplier;
+            
+            return Math.min(total, 200);
         }
 
         function getRank(rng) {
@@ -2281,6 +2367,27 @@
 
         function getVariant() {
             const variantLuck = getTotalEnchantVariant();
+            
+            // Check for unusuality guarantee every 50 rolls
+            unusualityRollCounter++;
+            if (unusualityRollCounter >= 50) {
+                unusualityRollCounter = 0;
+                // Force a 10k+ variant
+                const highVariants = VARIANTS.filter(v => v.multipliesRNG >= 10000);
+                if (highVariants.length > 0) {
+                    return highVariants[Math.floor(Math.random() * highVariants.length)];
+                }
+            }
+            
+            // Check for abnormal x10 variant luck every 100 rolls
+            abnormalRollCounter++;
+            if (abnormalRollCounter >= 100) {
+                abnormalRollCounter = 0;
+                abnormalVariantBoost = 10;
+            } else {
+                abnormalVariantBoost = 1;
+            }
+            
             for (let i = VARIANTS.length - 1; i >= 0; i--) {
                 const adjustedChance = VARIANTS[i].chance / (1 + variantLuck);
                 const random = Math.random();
@@ -2303,12 +2410,17 @@
                 }
             }
             
-            // Check for ahur yp first (fixed chance, unaffected by boosts)
+            // Check for eradicate first (only with obliteration)
+            if (hasObliteration && random <= 1/656565) {
+                return 'eradicate';
+            }
+            
+            // Check for ahur yp (fixed chance, unaffected by boosts)
             if (random <= 1/694200) {
                 return 'ahur yp';
             }
             
-            // Check for NULL first (true RNG secret, always replaces)
+            // Check for NULL (true RNG secret, always replaces)
             if (random <= 1/229172) {
                 return 'NULL';
             }
@@ -2331,7 +2443,7 @@
             for (let i = SECRETS.length - 1; i >= 0; i--) {
                 if (SECRETS[i].name === 'Completionist' || SECRETS[i].name === 'solar' || 
                     SECRETS[i].name === 'poly²' || SECRETS[i].name === 'NULL' || 
-                    SECRETS[i].name === 'ahur yp') continue;
+                    SECRETS[i].name === 'ahur yp' || SECRETS[i].name === 'eradicate') continue;
                 
                 const adjustedChance = SECRETS[i].chance / (1 + secretLuck);
                 if (random <= 1 / adjustedChance) {
@@ -2342,7 +2454,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice', 'apocalyptic'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -2351,6 +2463,19 @@
             
             const generated = {};
             const enchantLuck = getTotalEnchantLuckBonus();
+            
+            // Check for apocalyptic (only with obliteration)
+            if (hasObliteration) {
+                const apocalypticChance = ENCHANT_TYPES.find(e => e.name === 'apocalyptic').chance * (1 + enchantLuck);
+                if (Math.random() <= apocalypticChance) {
+                    generated['apocalyptic'] = {
+                        name: 'apocalyptic',
+                        type: 'apocalyptic',
+                        color: '#8B0000',
+                        priority: 9
+                    };
+                }
+            }
             
             const deltaChance = ENCHANT_TYPES.find(e => e.name === 'delta').chance * (1 + enchantLuck);
             let hasDelta = false;
@@ -2389,6 +2514,7 @@
                     name: obliterationEnchant.name,
                     type: obliterationEnchant.type,
                     value: obliterationEnchant.value,
+                    enchantLuck: obliterationEnchant.enchantLuck,
                     color: obliterationEnchant.color,
                     priority: obliterationEnchant.priority
                 };
@@ -2413,7 +2539,7 @@
             }
             
             ENCHANT_TYPES.forEach(enchant => {
-                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration' || enchant.name === 'avarice') return;
+                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration' || enchant.name === 'avarice' || enchant.name === 'apocalyptic') return;
                 
                 if ((hasAlpha || hasDelta || hasObliteration || hasAvarice) && shouldOverrideEnchant(enchant.name)) {
                     return;
@@ -2586,7 +2712,7 @@
             
             // Clear previous classes
             slot.className = 'slot rolled acceptable';
-            slot.classList.remove('null-secret', 'completionist-animating', 'obfuscating');
+            slot.classList.remove('null-secret', 'eradicate-secret', 'completionist-animating', 'obfuscating', 'apocalyptic-shake');
             
             // Remove all rank font classes
             const fontClasses = ['font-fantasy', 'font-giant', 'font-ultimate', 'font-apex', 
@@ -2600,9 +2726,14 @@
                 slot.classList.add(fontClass);
             }
             
-            // For NULL secret, add special class
-            if (rank === 'NULL') {
-                slot.classList.add('null-secret');
+            // For NULL or eradicate secret, add special class
+            if (rank === 'NULL' || rank === 'eradicate') {
+                slot.classList.add(rank === 'NULL' ? 'null-secret' : 'eradicate-secret');
+            }
+            
+            // Add apocalyptic shake animation if apocalyptic enchant is present
+            if (generatedEnchants && generatedEnchants.some(e => e.name === 'apocalyptic')) {
+                slot.classList.add('apocalyptic-shake');
             }
             
             const color = getRNGColor(finalRng, rank);
@@ -2627,7 +2758,7 @@
             const rankEl = slot.querySelector('.slot-rank');
             if (rankEl) {
                 // Set rank color to match RNG color (except for special ranks which have their own animations)
-                if (rank !== 'Completionist' && rank !== 'NULL' && rank !== 'ahur yp') {
+                if (rank !== 'Completionist' && rank !== 'NULL' && rank !== 'ahur yp' && rank !== 'eradicate') {
                     if (color.includes('gradient')) {
                         rankEl.style.background = color;
                         rankEl.style.webkitBackgroundClip = 'text';
@@ -2645,6 +2776,8 @@
                     rankEl.classList.add('poly-squared-rank');
                 } else if (rank === 'NULL') {
                     rankEl.classList.add('null-rank');
+                } else if (rank === 'eradicate') {
+                    rankEl.classList.add('eradicate-rank');
                 } else if (rank === 'Completionist') {
                     rankEl.classList.add('completionist-rank');
                     // Start the completionist animation for this slot
@@ -2660,7 +2793,7 @@
             const valueEl = slot.querySelector('.slot-value');
             if (shouldObfuscate(finalRng) && !displayText) {
                 valueEl.classList.add('obfuscating');
-                if (rankEl && rank !== 'NULL' && rank !== 'Completionist' && rank !== 'ahur yp') {
+                if (rankEl && rank !== 'NULL' && rank !== 'Completionist' && rank !== 'ahur yp' && rank !== 'eradicate') {
                     rankEl.classList.add('obfuscating');
                 }
             }
@@ -2692,7 +2825,7 @@
                 
                 // Adjust rank position to account for enchant indicator
                 if (rankEl) {
-                    rankEl.style.marginBottom = '12px'; // Make room for enchant indicator
+                    rankEl.style.marginBottom = '12px';
                 }
             } else {
                 // Remove enchant indicator if present
@@ -2754,6 +2887,22 @@
                                 color: enchant.color,
                                 priority: enchant.priority
                             };
+                        } else if (enchant.type === 'obliteration') {
+                            return {
+                                name: enchant.name,
+                                type: enchant.type,
+                                value: enchant.value,
+                                enchantLuck: enchant.enchantLuck,
+                                color: enchant.color,
+                                priority: enchant.priority
+                            };
+                        } else if (enchant.type === 'apocalyptic') {
+                            return {
+                                name: enchant.name,
+                                type: enchant.type,
+                                color: enchant.color,
+                                priority: enchant.priority
+                            };
                         }
                         return { ...enchant };
                     }),
@@ -2777,7 +2926,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating', 'obfuscating');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
             }
             
             // Disable the buttons for this slot
@@ -2820,7 +2969,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating', 'obfuscating');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
             }
             
             // Disable the buttons for this slot
@@ -2868,6 +3017,9 @@
                 equippedOrb.rollsWithOvertime = 0;
             }
             
+            // Update obliteration status
+            hasObliteration = equippedOrb.enchants.some(e => e.type === 'obliteration');
+            
             updateEnchantInventory();
             updateBottomStats();
             updateUI();
@@ -2876,6 +3028,7 @@
 
         function unequipEnchantOrb() {
             equippedOrb = null;
+            hasObliteration = false;
             updateEnchantInventory();
             updateBottomStats();
             updateUI();
@@ -2952,6 +3105,21 @@
             currentRollGeneratedRolls = [];
             pausedSlotIndex = -1;
             
+            // Check for endless bulk boost
+            if (Math.random() < 0.002) { // 1/500 chance
+                endlessBulkMultiplier = 5;
+                endlessBulkTimer = 10; // 10 seconds
+                showToast('Endless Boost!', 'Bulk rolls quintupled for 10 seconds!', 3000);
+            }
+            
+            // Update endless timer
+            if (endlessBulkTimer > 0) {
+                endlessBulkTimer--;
+                if (endlessBulkTimer <= 0) {
+                    endlessBulkMultiplier = 1;
+                }
+            }
+            
             const slots = document.querySelectorAll('.slot');
             slots.forEach((slot, i) => {
                 slot.innerHTML = `
@@ -2963,8 +3131,8 @@
                 slot.className = 'slot unrolled acceptable';
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
-                slot.classList.remove('null-secret');
-                slot.classList.remove('completionist-animating', 'obfuscating');
+                slot.classList.remove('null-secret', 'eradicate-secret');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
                 const starIndicator = slot.querySelector('.slot-stars');
                 if (starIndicator) starIndicator.remove();
                 const enchantIndicator = slot.querySelector('.slot-enchant');
@@ -2988,7 +3156,13 @@
             const baseSpeed = 3;
             const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
             const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
-            const rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
+            let rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
+            
+            // Apply blitz bypass - cap at 0.001s
+            const hasBlitz = equippedOrb && equippedOrb.enchants.some(e => e.name === 'blitz');
+            if (hasBlitz) {
+                rollSpeed = 0.001;
+            }
             
             rollNumber++;
             
@@ -3024,10 +3198,10 @@
                         finalRng = baseRng;
                     } else if (secret === 'Completionist') {
                         finalRng = -500;
-                    } else if (secret === 'NULL') {
-                        finalRng = baseRng; // NULL replaces the rank but keeps RNG value
+                    } else if (secret === 'NULL' || secret === 'eradicate') {
+                        finalRng = baseRng;
                     } else if (secret === 'ahur yp') {
-                        finalRng = 694200; // Fixed TRNG value for ahur yp
+                        finalRng = 694200;
                     } else {
                         finalRng = baseRng * variant.multipliesRNG;
                     }
@@ -3040,7 +3214,7 @@
                     discovered.ranks.add(rankName);
                     if (secret) discovered.secrets.add(secret);
                     
-                    const gain = (secret === 'Completionist' || secret === 'poly²' || secret === 'NULL' || secret === 'ahur yp') ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
+                    const gain = (secret === 'Completionist' || secret === 'poly²' || secret === 'NULL' || secret === 'ahur yp' || secret === 'eradicate') ? 0 : Math.floor(Math.pow(finalRng, 0.8) * 0.75);
                     polycoin += gain;
                     rollCoins += 1;
                     totalRolls++;
@@ -3089,7 +3263,9 @@
                         rollNumber: rollNumber,
                         isSecret: !!secret,
                         secretChance: secretChance,
-                        generatedIndex: i
+                        generatedIndex: i,
+                        insanityMultiplier: insanityRNGMultiplier,
+                        apocalypticMultiplier: apocalypticRNGMultiplier
                     };
                     
                     generatedRolls.push(rollData);
@@ -3458,7 +3634,7 @@
                 }
                 
                 return `
-                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'NULL' ? 'null-rank' : item.rank === 'ahur yp' ? 'ahur-yp-rank' : ''}">
+                    <div class="inventory-item ${tierClass} ${rankFontClass} ${item.rank === 'solar' ? 'solar-rank' : item.rank === 'poly²' ? 'poly-squared-rank' : item.rank === 'Completionist' ? 'completionist-rank' : item.rank === 'NULL' ? 'null-rank' : item.rank === 'eradicate' ? 'eradicate-rank' : item.rank === 'ahur yp' ? 'ahur-yp-rank' : ''}">
                         <div class="tier-name">${tier.name}</div>
                         <div class="tier-stars">${tier.stars}★</div>
                         <div>
@@ -3569,7 +3745,35 @@
                 const secret = applyStarBonus(20, stars);
                 const speed = applyStarBonus(2, stars);
                 const variant = applyStarBonus(17.5, stars);
-                return `-1000 bulk (sets to 1), +${luck.toFixed(1)} luck, +${secret.toFixed(1)} secret, +${speed.toFixed(2)}s speed, +${variant.toFixed(1)} variant${starBonus}`;
+                const enchantLuck = applyStarBonus(12.5, stars);
+                return `-1000 bulk (sets to 1), +${luck.toFixed(1)} luck, +${secret.toFixed(1)} secret, +${speed.toFixed(2)}s speed, +${variant.toFixed(1)} variant, +${enchantLuck.toFixed(1)} enchant luck${starBonus}`;
+            }
+            if (enchant.type === 'insanity') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(1)} luck, 1/100 chance for x100 RNG${starBonus}`;
+            }
+            if (enchant.type === 'blitz') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(2)}s speed, bypass rollspeed (capped at 0.001s)${starBonus}`;
+            }
+            if (enchant.type === 'omnipotence') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(1)} secret, x1.5 true RNG luck${starBonus}`;
+            }
+            if (enchant.type === 'endless') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(0)} bulk roll, 1/500 chance to quintuple bulk for 10s${starBonus}`;
+            }
+            if (enchant.type === 'unusuality') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(1)} variant luck, guarantee 10k+ variant every 50 rolls${starBonus}`;
+            }
+            if (enchant.type === 'abnormal') {
+                const val = applyStarBonus(enchant.value, stars);
+                return `+${val.toFixed(1)} enchant luck, x10 variant luck for 1 roll every 100 rolls${starBonus}`;
+            }
+            if (enchant.type === 'apocalyptic') {
+                return `text shakes${starBonus}`;
             }
             return '';
         }
@@ -3728,7 +3932,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -3780,7 +3984,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -3871,14 +4075,15 @@
                 if (s.name === 'Completionist') specialNote = ' (requires all normal ranks, always rollable, RNG: -500)';
                 if (s.name === 'poly²') specialNote = '';
                 if (s.name === 'NULL') specialNote = '';
+                if (s.name === 'eradicate') specialNote = ' (true RNG, only with obliteration)';
                 if (s.name === 'ahur yp') specialNote = ' (fixed TRNG: 694200, unaffected by boosts)';
                 
                 // Apply color to secret name
                 let secretColor = '#ff69b4';
                 if (s.name === 'solar') secretColor = 'orange';
                 if (s.name === 'poly²') secretColor = '#FF00FF';
-                if (s.name === 'NULL') {
-                    return `<div class="index-item null-rank"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
+                if (s.name === 'NULL' || s.name === 'eradicate') {
+                    return `<div class="index-item ${s.name === 'NULL' ? 'null-rank' : 'eradicate-rank'}"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
                 }
                 if (s.name === 'Completionist') {
                     return `<div class="index-item completionist-index"><span style="${style}">${icon}</span> <span>${s.name}</span>: 1/${formatNumber(s.chance)}${specialNote}</div>`;
@@ -3906,7 +4111,7 @@
                 if (enchant.type === 'weird') effect = `+${enchant.value} enchant luck`;
                 if (enchant.type === 'overtime') effect = `+0.001 luck, +0.001s speed, +0.001 variant, +0.001 secret (grows per roll)`;
                 if (enchant.type === 'blessing') effect = `1/333,333 chance for poly² (RNG: -2,932,932)`;
-                if (enchant.type === 'obliteration') effect = `-1000 bulk (sets to 1), +500 luck, +20 secret, +2s speed, +17.5 variant`;
+                if (enchant.type === 'obliteration') effect = `-1000 bulk (sets to 1), +500 luck, +20 secret, +2s speed, +17.5 variant, +12.5 enchant luck`;
                 if (enchant.type === 'avarice') effect = `+${enchant.bulk} bulk roll, ${enchant.luck} luck, ${enchant.speed}s speed, ${enchant.variant} variant luck, ${enchant.secret} secret luck`;
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) effect = '+5 luck, +0.25s speed, +5 secret, +0.5 variant, +1 bulk';
@@ -3915,6 +4120,13 @@
                 }
                 if (enchant.type === 'greed') effect = '+2 bulk roll, -20 luck, -0.7s speed';
                 if (enchant.type === 'patience') effect = '+3 bulk roll, +100 luck, -25s speed, +5 variant';
+                if (enchant.type === 'insanity') effect = `+${enchant.value} luck, 1/100 chance for x100 RNG`;
+                if (enchant.type === 'blitz') effect = `+${enchant.value}s speed, bypass rollspeed (capped at 0.001s)`;
+                if (enchant.type === 'omnipotence') effect = `+${enchant.value} secret, x1.5 true RNG luck`;
+                if (enchant.type === 'endless') effect = `+${enchant.value} bulk roll, 1/500 chance to quintuple bulk for 10s`;
+                if (enchant.type === 'unusuality') effect = `+${enchant.value} variant luck, guarantee 10k+ variant every 50 rolls`;
+                if (enchant.type === 'abnormal') effect = `+${enchant.value} enchant luck, x10 variant luck for 1 roll every 100 rolls`;
+                if (enchant.type === 'apocalyptic') effect = `text shakes`;
                 const chanceDisplay = Math.round(1/enchant.chance);
                 return `<div class="index-item"><span style="${style}">${icon}</span> <span style="color: ${enchant.color}">${enchant.name}</span>: ${effect} (1/${formatNumber(chanceDisplay)})</div>`;
             }).join('');
@@ -4104,6 +4316,22 @@
                                     color: e.color,
                                     priority: e.priority
                                 };
+                            } else if (e.type === 'obliteration') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    value: e.value,
+                                    enchantLuck: e.enchantLuck,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'apocalyptic') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
                             }
                             return {
                                 name: e.name,
@@ -4141,6 +4369,22 @@
                                     speed: e.speed,
                                     variant: e.variant,
                                     secret: e.secret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'obliteration') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    value: e.value,
+                                    enchantLuck: e.enchantLuck,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'apocalyptic') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
                                     color: e.color,
                                     priority: e.priority
                                 };
@@ -4186,6 +4430,22 @@
                                     speed: e.speed,
                                     variant: e.variant,
                                     secret: e.secret,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'obliteration') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    value: e.value,
+                                    enchantLuck: e.enchantLuck,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'apocalyptic') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
                                     color: e.color,
                                     priority: e.priority
                                 };
@@ -4291,11 +4551,15 @@
                         if (equippedOrb.rollsWithOvertime === undefined) equippedOrb.rollsWithOvertime = 0;
                     }
                     
+                    // Update obliteration status
+                    hasObliteration = equippedOrb && equippedOrb.enchants.some(e => e.type === 'obliteration');
+                    
                     startTicketTimer();
                 }
             } catch (error) {
                 console.log('no save data found or error loading:', error);
                 equippedOrb = null;
+                hasObliteration = false;
                 startTicketTimer();
             }
             
