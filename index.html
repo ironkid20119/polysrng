@@ -1756,22 +1756,22 @@
         const ENCHANT_TYPES = [
             { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5, priority: 1 },
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5, priority: 2 },
-            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/12500, priority: 3 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/125000000, priority: 3 },
             { name: 'speed i', type: 'speed', value: 0.25, color: '#87ceeb', chance: 1/2.5, priority: 1 },
             { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', chance: 1/10, priority: 2 },
-            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/7500, priority: 3 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/75000000, priority: 3 },
             { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10, priority: 1 },
             { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50, priority: 2 },
-            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/25000, priority: 3 },
+            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/250000000, priority: 3 },
             { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500, priority: 1 },
             { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/10000, priority: 2 },
-            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/10000000, priority: 3 },
+            { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/100000000000, priority: 3 },
             { name: 'variant i', type: 'variant', value: 0.5, color: '#ffc0cb', chance: 1/25, priority: 1 },
             { name: 'variant ii', type: 'variant', value: 2.5, color: '#ff69b4', chance: 1/100, priority: 2 },
-            { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/33333, priority: 3 },
+            { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/333333333, priority: 3 },
             { name: 'addition i', type: 'addition', value: 1, color: '#ffaa00', chance: 1/25, priority: 1 },
             { name: 'addition ii', type: 'addition', value: 2, color: '#ff8800', chance: 1/75, priority: 2 },
-            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/5000, priority: 3 },
+            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/50000000, priority: 3 },
             { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60, priority: 1 },
             { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 },
             { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
@@ -4569,7 +4569,7 @@
                     endlessActiveUntil,
                     hasEndlessActive
                 };
-                localStorage.setItem('polys-rng-save2', JSON.stringify(saveData));
+                localStorage.setItem('polys-rng-save3', JSON.stringify(saveData));
             } catch (error) {
                 console.error('failed to save game:', error);
             }
@@ -4577,7 +4577,7 @@
 
         function loadGame() {
             try {
-                const result = localStorage.getItem('polys-rng-save2');
+                const result = localStorage.getItem('polys-rng-save3');
                 if (result) {
                     const saveData = JSON.parse(result);
                     
