@@ -3264,7 +3264,7 @@
             // Apply blitz buff (bypass roll speed cap)
             let rollSpeed;
             if (hasBlitzThisRoll) {
-                rollSpeed = Math.max(0.001, baseSpeed - speedReduction); // Cap at 0.001s
+                rollSpeed = Math.max(0.0168, baseSpeed - speedReduction); // Cap at 0.001s
             } else {
                 rollSpeed = Math.max(minRollSpeed, baseSpeed - speedReduction);
             }
