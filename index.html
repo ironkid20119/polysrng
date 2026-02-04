@@ -1384,7 +1384,6 @@
 
         <div class="button-container">
             <button onclick="roll()" id="rollBtn">roll</button>
-            <button class="fix-completionist-btn" onclick="fixCompletionist()">fix completionist</button>
         </div>
 
         <div class="tickets-upgrades">
@@ -1756,28 +1755,35 @@
         const ENCHANT_TYPES = [
             { name: 'luck i', type: 'luck', value: 5, color: '#90ee90', chance: 1/1.5, priority: 1 },
             { name: 'luck ii', type: 'luck', value: 10, color: '#00ff00', chance: 1/5, priority: 2 },
-            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/125000000, priority: 3 },
+            { name: 'fortune', type: 'luck', value: 20, color: '#ffd700', chance: 1/2777, priority: 3 },
+            { name: 'insanity', type: 'luck', value: 50, color: '#00aa00', chance: 1/125000000, priority: 4 },
             { name: 'speed i', type: 'speed', value: 0.25, color: '#87ceeb', chance: 1/2.5, priority: 1 },
             { name: 'speed ii', type: 'speed', value: 0.5, color: '#1e90ff', chance: 1/10, priority: 2 },
-            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/75000000, priority: 3 },
+            { name: 'overture', type: 'speed', value: 10, color: '#4682b4', chance: 1/5625, priority: 3 },
+            { name: 'blitz', type: 'speed', value: 75, color: '#0066cc', chance: 1/75000000, priority: 4 },
             { name: 'insight i', type: 'secret', value: 5, color: '#9370db', chance: 1/10, priority: 1 },
             { name: 'insight ii', type: 'secret', value: 25, color: '#8a2be2', chance: 1/50, priority: 2 },
-            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/250000000, priority: 3 },
+            { name: 'allknowing', type: 'secret', value: 50, color: '#4b0082', chance: 1/18500, priority: 3 },
+            { name: 'omnipotence', type: 'secret', value: 125, color: '#6a0dad', chance: 1/250000000, priority: 4 },
             { name: 'requiem i', type: 'requiem', value: 1, color: '#ff4500', chance: 1/500, priority: 1 },
             { name: 'requiem ii', type: 'requiem', value: 2, color: '#dc143c', chance: 1/10000, priority: 2 },
             { name: 'genesis', type: 'requiem', value: 3, color: '#8b0000', chance: 1/100000000000, priority: 3 },
             { name: 'variant i', type: 'variant', value: 0.5, color: '#ffc0cb', chance: 1/25, priority: 1 },
             { name: 'variant ii', type: 'variant', value: 2.5, color: '#ff69b4', chance: 1/100, priority: 2 },
-            { name: 'unusuality', type: 'variant', value: 20, color: '#ff1493', chance: 1/333333333, priority: 3 },
+            { name: 'unique', type: 'variant', value: 17.5, color: '#da70d6', chance: 1/50000, priority: 3 },
+            { name: 'unusuality', type: 'variant', value: 2500, color: '#ff1493', chance: 1/333333333, priority: 4 },
             { name: 'addition i', type: 'addition', value: 1, color: '#ffaa00', chance: 1/25, priority: 1 },
             { name: 'addition ii', type: 'addition', value: 2, color: '#ff8800', chance: 1/75, priority: 2 },
-            { name: 'endless', type: 'addition', value: 5, color: '#ff6600', chance: 1/50000000, priority: 3 },
+            { name: 'cloner', type: 'addition', value: 15, color: '#cd853f', chance: 1/234567, priority: 3 },
+            { name: 'endless', type: 'addition', value: 25, color: '#ff6600', chance: 1/50000000, priority: 4 },
             { name: 'greed', type: 'greed', value: 1, color: '#ffd700', chance: 1/60, priority: 1 },
             { name: 'patience', type: 'patience', value: 1, color: '#00ced1', chance: 1/75, priority: 1 },
             { name: 'alpha', type: 'alpha', value: 1, color: '#00ffff', chance: 1/125, priority: 4 },
             { name: 'weird i', type: 'weird', value: 1.2, color: '#ff00ff', chance: 1/500, priority: 1 },
             { name: 'weird ii', type: 'weird', value: 2.5, color: '#cc00cc', chance: 1/2500, priority: 2 },
-            { name: 'abnormal', type: 'weird', value: 12.5, color: '#990099', chance: 1/333333, priority: 3 },
+            { name: 'scientific', type: 'weird', value: 10, color: '#ba55d3', chance: 1/77777, priority: 3 },
+            { name: 'abnormal', type: 'weird', value: 500, color: '#990099', chance: 1/333333, priority: 4 },
+            { name: 'mighty', type: 'mighty', value: 1, color: '#f0e68c', chance: 1/2500000, priority: 3 },
             { name: 'overtime', type: 'overtime', baseLuck: 0.001, baseSpeed: 0.001, baseVariant: 0.001, baseSecret: 0.001, 
               currentLuck: 0.001, currentSpeed: 0.001, currentVariant: 0.001, currentSecret: 0.001, color: '#32CD32', chance: 1/5725652.5, priority: 1 },
             { name: 'polys blessing', type: 'blessing', value: 0, color: '#FFD700', chance: 1/500000, priority: 5 },
@@ -2191,7 +2197,7 @@
         }
 
         function calculateRNG() {
-            const luck = luckLevel * 0.5 + getTotalEnchantLuck();
+            const luck = Math.max(1, luckLevel * 0.5 + getTotalEnchantLuck());
             let rng = Math.random() ** (-1.3 ) * luck
             
             // Apply Ultimatiplier chance
@@ -2228,10 +2234,12 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'luck') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'mighty') total += applyStarBonus(20, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.25, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(2.5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(500, stars);
                 if (enchant.type === 'avarice') total += applyStarBonus(enchant.luck, stars);
+                if (enchant.type === 'weird' && (enchant.priority === 4 || enchant.name === 'scientific')) total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(10, stars);
@@ -2275,6 +2283,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'secret') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'mighty') total += applyStarBonus(50, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.5, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(20, stars);
@@ -2312,6 +2321,7 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'speed') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'mighty') total += applyStarBonus(10, stars);
                 if (enchant.type === 'alpha') total -= applyStarBonus(0.05, stars);
                 if (enchant.type === 'delta') total -= applyStarBonus(0.5, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(2, stars);
@@ -2343,17 +2353,19 @@
         }
 
         function getTotalEnchantVariant() {
-            let total = variantLuckLevel * 0.05;
+            let total = Math.max(1, variantLuckLevel * 0.05);
             if (!equippedOrb) return total;
             
             const stars = equippedOrb.stars || 0;
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'variant') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'mighty') total += applyStarBonus(1000, stars);
                 if (enchant.type === 'alpha') total += applyStarBonus(0.125, stars);
                 if (enchant.type === 'delta') total += applyStarBonus(1.25, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(17.5, stars);
                 if (enchant.type === 'avarice') total += applyStarBonus(enchant.variant, stars);
+                if (enchant.type === 'variant' && enchant.priority === 4) total += applyStarBonus(1000, stars);
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += applyStarBonus(0.5, stars);
                     else if (enchant.value === 2) total += applyStarBonus(2.5, stars);
@@ -2376,13 +2388,14 @@
         }
 
         function getTotalEnchantLuckBonus() {
-            let total = enchantLuckLevel * 0.05;
+            let total = Math.max(1, enchantLuckLevel * 0.05);
             if (!equippedOrb) return total;
             
             const stars = equippedOrb.stars || 0;
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'weird') total += applyStarBonus(enchant.value, stars);
+                if (enchant.type === 'mighty') total += applyStarBonus(250, stars);
                 if (enchant.type === 'obliteration') total += applyStarBonus(12.5, stars); // BUFF: +12.5 enchant luck
             });
             
@@ -2401,7 +2414,9 @@
             
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'addition') total += enchant.value;
+                if (enchant.type === 'mighty') total += 25;
                 if (enchant.type === 'avarice') total += enchant.bulk;
+                if (enchant.type === 'addition' && enchant.priority === 4) total += 15;
                 if (enchant.type === 'greed') total += 2;
                 if (enchant.type === 'patience') total += 3;
                 if (enchant.type === 'obliteration') {
@@ -2473,7 +2488,7 @@
         }
 
         function checkSecret(baseRng, hasPolyBlessing) {
-            const secretLuck = secretLevel * 0.2 + getTotalEnchantSecret();
+            const secretLuck = Math.max(1, secretLevel * 0.2 + getTotalEnchantSecret());
             const random = Math.random();
             
             let allNormalRanksDiscovered = true;
@@ -2530,7 +2545,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice', 'apocalyptic'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -4032,7 +4047,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -4084,7 +4099,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
