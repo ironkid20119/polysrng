@@ -4940,7 +4940,7 @@
                     abnormalX100Active,
                     abnormalRemainingRolls
                 };
-                localStorage.setItem('polys-rng-save4', JSON.stringify(saveData));
+                localStorage.setItem('polys-rng-save3', JSON.stringify(saveData));
             } catch (error) {
                 console.error('failed to save game:', error);
             }
@@ -4948,7 +4948,7 @@
 
         function loadGame() {
             try {
-                const result = localStorage.getItem('polys-rng-save4');
+                const result = localStorage.getItem('polys-rng-save3');
                 if (result) {
                     const saveData = JSON.parse(result);
                     
