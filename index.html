@@ -91,67 +91,68 @@
             border-color: #666;
         }
         
-        /* Toast notifications */
+        /* Toast notifications - BOTTOM RIGHT CORNER */
         .toast-container {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 20px;
+            right: 20px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-end;
             gap: 10px;
             pointer-events: none;
+            max-width: 300px; /* 2.5x thinner */
         }
         
         .toast {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 12px 20px; /* More compact */
+            border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             animation: toast-slide-in 0.3s ease-out;
-            max-width: 400px;
+            max-width: 300px;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px; /* Smaller font */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             opacity: 0;
             transition: opacity 0.3s, transform 0.3s;
             pointer-events: auto;
+            width: 100%;
         }
         
         .toast.show {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
         }
         
         .toast.hide {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateX(100%);
         }
         
         @keyframes toast-slide-in {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateX(100%);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
         }
         
         .toast-title {
             font-weight: bold;
             color: #ff69b4;
-            margin-bottom: 5px;
-            font-size: 16px;
+            margin-bottom: 4px;
+            font-size: 14px;
         }
         
         .toast-message {
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.9;
         }
         
@@ -183,13 +184,32 @@
             font-size: 12px;
         }
         
+        .disable-secrets-toggle {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 12px;
+        }
+        
         body.dark-mode .dark-mode-toggle,
-        body.dark-mode .toast-toggle {
+        body.dark-mode .toast-toggle,
+        body.dark-mode .disable-secrets-toggle {
             background: #666;
         }
         
         .toast-toggle.active {
             background: #4CAF50;
+        }
+        
+        .disable-secrets-toggle.active {
+            background: #ff69b4;
         }
 
         .container {
@@ -229,6 +249,62 @@
             font-size: 24px;
             font-weight: bold;
             color: #ff69b4;
+        }
+        
+        /* Roll Stats Display */
+        .roll-stats {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #ff69b4;
+        }
+        
+        .roll-stats-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 15px;
+            text-transform: lowercase;
+        }
+        
+        .roll-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .roll-stat-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+        
+        .roll-stat-label {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: lowercase;
+        }
+        
+        .roll-stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ff69b4;
+        }
+        
+        body.dark-mode .roll-stats {
+            background: #333;
+            border-color: #ff69b4;
+        }
+        
+        body.dark-mode .roll-stat-item {
+            background: #444;
+            border-color: #666;
         }
         
         /* NEW ROLLER CONTAINER */
@@ -1200,20 +1276,18 @@
             animation: completionist-color-cycle 0.12s infinite;
         }
         
-        /* Obfuscation animation - FIXED */
+        /* Obfuscation animation - FIXED (removed double positive) */
         .slot-value.obfuscating {
-            opacity: 1 !important;
             animation: obfuscate 0.5s infinite alternate;
         }
         
         .slot-rank.obfuscating {
-            opacity: 1 !important;
             animation: obfuscate 0.5s infinite alternate;
         }
         
         @keyframes obfuscate {
-            0% { opacity: 1; filter: brightness(1); }
-            100% { opacity: 1; filter: brightness(1.5); }
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
         
         /* Bottom stats */
@@ -1306,11 +1380,12 @@
     </style>
 </head>
 <body>
-    <!-- Toast container -->
+    <!-- Toast container - BOTTOM RIGHT CORNER -->
     <div class="toast-container" id="toastContainer"></div>
     
     <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
     <button class="toast-toggle active" id="toastToggleBtn" onclick="toggleToastNotifications()">🔔 Toasts ON</button>
+    <button class="disable-secrets-toggle" id="disableSecretsToggleBtn" onclick="toggleDisableSecrets()">🔒 Secrets ON</button>
     
     <div class="container">
         <h1>polys silly rngame</h1>
@@ -1342,6 +1417,14 @@
             </div>
         </div>
 
+        <!-- Roll Stats Display -->
+        <div class="roll-stats">
+            <div class="roll-stats-title">📈 Current Roll Stats</div>
+            <div class="roll-stats-grid" id="rollStatsGrid">
+                <!-- Stats will be populated by JavaScript -->
+            </div>
+        </div>
+
         <div class="autoroll-controls">
             <button class="autorow-toggle" id="autorollBtn" onclick="toggleAutoroll()">▶️ Start Autoroll</button>
             <div style="margin-top: 10px;">
@@ -1355,6 +1438,11 @@
             <div style="margin-top: 10px;">
                 <label style="font-size: 14px; color: #666;">Pause on Enchant Rarity ≥ </label>
                 <input type="number" id="pauseEnchantRarity" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
+            </div>
+            <!-- NEW: Disable Secrets Input -->
+            <div style="margin-top: 10px;">
+                <label style="font-size: 14px; color: #666;">Disable normal secrets below RNG </label>
+                <input type="number" id="disableSecretsBelow" value="0" min="0" style="width: 100px; padding: 5px; border-radius: 5px; border: 2px solid #ddd;">
             </div>
         </div>
 
@@ -1674,11 +1762,30 @@
             if (toastNotificationsEnabled) {
                 btn.textContent = '🔔 Toasts ON';
                 btn.classList.add('active');
-                showToast('Toasts Enabled', 'Notifications will now appear when autoroll stops.', 2000);
+                showToast('Toasts Enabled', 'Notifications will now appear.', 2000);
             } else {
                 btn.textContent = '🔕 Toasts OFF';
                 btn.classList.remove('active');
             }
+            saveGame();
+        }
+
+        // Disable Secrets system
+        let disableSecretsEnabled = false;
+        
+        function toggleDisableSecrets() {
+            disableSecretsEnabled = !disableSecretsEnabled;
+            const btn = document.getElementById('disableSecretsToggleBtn');
+            if (disableSecretsEnabled) {
+                btn.textContent = '🔓 Secrets OFF';
+                btn.classList.add('active');
+                showToast('Secrets Disabled', 'Normal secrets below threshold will be disabled.', 2000);
+            } else {
+                btn.textContent = '🔒 Secrets ON';
+                btn.classList.remove('active');
+                showToast('Secrets Enabled', 'All secrets are enabled.', 2000);
+            }
+            saveGame();
         }
 
         // game constants
@@ -1764,7 +1871,7 @@
             { name: 'NULL', chance: 229172 },
             { name: 'Completionist', chance: 1000000 },
             { name: 'ahur yp', chance: 694200 },
-            { name: 'eradicate', chance: 656565 } // NEW SECRET
+            { name: 'eradicate', chance: 656565 }
         ];
 
         const ENCHANT_TYPES = [
@@ -1807,11 +1914,11 @@
             { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 },
             { name: 'apocalyptic', type: 'apocalyptic', value: 0, color: '#FF0000', chance: 1/999999, priority: 9 },
             // NEW GOLDIUM ENCHANTS
-            { name: 'goldium t1', type: 'goldium', tier: 1, chance: 1/5000000, color: '#FFD700', priority: 10, triggerChance: 0.03, exponent: -1.5 },
-            { name: 'goldium t2', type: 'goldium', tier: 2, chance: 1/125000000, color: '#FFC125', priority: 11, triggerChance: 0.06, exponent: -1.6 },
-            { name: 'goldium t3', type: 'goldium', tier: 3, chance: 1/3125000000, color: '#DAA520', priority: 12, triggerChance: 0.12, exponent: -1.7 },
-            { name: 'goldium t4', type: 'goldium', tier: 4, chance: 1/78125000000, color: '#B8860B', priority: 13, triggerChance: 0.15, exponent: -1.75 },
-            { name: 'platinumese', type: 'goldium', tier: 5, chance: 1/50000000000000, color: '#E5E4E2', priority: 14, triggerChance: 0.5, exponent: -2 }
+            { name: 'goldium t1', type: 'goldium', tier: 1, chance: 1/5000000, color: '#FFD700', priority: 10, triggerChance: 0.03, exponent: -0.2 },
+            { name: 'goldium t2', type: 'goldium', tier: 2, chance: 1/125000000, color: '#FFC125', priority: 11, triggerChance: 0.06, exponent: -0.3 },
+            { name: 'goldium t3', type: 'goldium', tier: 3, chance: 1/3125000000, color: '#DAA520', priority: 12, triggerChance: 0.12, exponent: -0.4 },
+            { name: 'goldium t4', type: 'goldium', tier: 4, chance: 1/78125000000, color: '#B8860B', priority: 13, triggerChance: 0.15, exponent: -0.45 },
+            { name: 'platinumese', type: 'goldium', tier: 5, chance: 1/50000000000000, color: '#E5E4E2', priority: 14, triggerChance: 0.5, exponent: -0.7 }
         ];
 
         // SPINNER REWARDS
@@ -1882,8 +1989,8 @@
         let eterniumCost = 1e12;
         let ultimatiplierLevel = 0;
         let ultimatiplierCost = 100;
-        let polyExpLevel = 0; // NEW: Polyexponential numbers upgrade level
-        let polyExpCost = 1e11; // NEW: Starting cost for polyexponential numbers
+        let polyExpLevel = 0;
+        let polyExpCost = 1e11;
         
         // NEW HIGH-TIER UPGRADES
         let polycoinLuckBoosterPurchased = false;
@@ -1906,9 +2013,13 @@
         let hasApocalypticThisRoll = false;
         
         // NEW: Goldium tracking
-        let goldiumRollCounter = 0;
         let goldiumActiveThisRoll = false;
-        let currentGoldiumExponent = -1.3;
+        let currentGoldiumExponentBonus = 0;
+        let goldiumTierActive = 0;
+        
+        // Abnormal ability tracking
+        let abnormalX100Active = false;
+        let abnormalRemainingRolls = 0;
         
         // FIXED: Initialize gameStartTime here at the top
         let gameStartTime = Date.now();
@@ -1943,7 +2054,7 @@
         // Get font for rank name
         function getRankFont(rankName) {
             if (rankName === 'NULL' || rankName === 'eradicate') return 'null-rank';
-            if (rankName === 'ahur yp') return 'font-almighty'; // Use almighty font for ahur yp
+            if (rankName === 'ahur yp') return 'font-almighty';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'font-fantasy';
                 case 'giant': return 'font-giant';
@@ -1965,7 +2076,7 @@
         function getIndexRankFont(rankName) {
             if (rankName === 'NULL') return 'null-rank';
             if (rankName === 'eradicate') return 'eradicate-rank';
-            if (rankName === 'ahur yp') return 'rank-almighty'; // Use almighty font for ahur yp
+            if (rankName === 'ahur yp') return 'rank-almighty';
             switch(rankName.toLowerCase()) {
                 case 'fantasy': return 'rank-fantasy';
                 case 'giant': return 'rank-giant';
@@ -2179,7 +2290,7 @@
                     if (!isRolling) {
                         roll();
                     }
-                }, 17.5); // Changed from 100ms to 10ms for faster pausing
+                }, 17.5);
             }
         }
 
@@ -2188,7 +2299,7 @@
             if (rankName === 'solar') return 'orange';
             if (rankName === 'poly²') return '#FF00FF';
             if (rankName === 'Completionist') return '#00ffff';
-            if (rankName === 'ahur yp') return '#9b30ff'; // Purple color for ahur yp
+            if (rankName === 'ahur yp') return '#9b30ff';
             if (rng < 1000) return '#aad7e6';
             if (rng < 10000) return '#ffc0cb';
             if (rng < 100000) return '#90ee90';
@@ -2230,27 +2341,30 @@
             // Base exponent from polyexponential numbers upgrade
             const baseExponent = -1.3 - (polyExpLevel * 0.1);
             
-            // Use current exponent (might be modified by goldium)
-            const currentExponent = goldiumActiveThisRoll ? currentGoldiumExponent : baseExponent;
+            // Add goldium bonus if active
+            const finalExponent = baseExponent + currentGoldiumExponentBonus;
             
-            let rng = Math.random() ** currentExponent * luck;
+            let rng = Math.random() ** finalExponent * luck;
             
             // Apply Ultimatiplier chance
             if (ultimatiplierLevel > 0) {
-                const ultimatiplierChance = ultimatiplierLevel * 0.0005; // 0.05% per level
+                const ultimatiplierChance = ultimatiplierLevel * 0.0005;
                 if (Math.random() < ultimatiplierChance) {
-                    rng *= 5; // x5 RNG
+                    rng *= 5;
+                    showToast('Ultimatiplier!', 'x5 RNG for this roll!', 2000);
                 }
             }
             
             // Apply insanity buff (1/100 chance for x1000)
             if (hasInsanityThisRoll && Math.random() < 0.01) {
                 rng *= 1000;
+                showToast('Insanity Trigger!', 'x1000 RNG!', 2000);
             }
             
             // Apply apocalyptic buff (1/100 chance for x1000)
             if (hasApocalypticThisRoll && Math.random() < 0.01) {
                 rng *= 1000;
+                showToast('Apocalyptic Trigger!', 'x1000 RNG!', 2000);
             }
             
             return Math.max(1, rng);
@@ -2431,11 +2545,11 @@
             equippedOrb.enchants.forEach(enchant => {
                 if (enchant.type === 'weird') total += applyStarBonus(enchant.value, stars);
                 if (enchant.type === 'mighty') total += applyStarBonus(250, stars);
-                if (enchant.type === 'obliteration') total += applyStarBonus(12.5, stars); // BUFF: +12.5 enchant luck
+                if (enchant.type === 'obliteration') total += applyStarBonus(12.5, stars);
             });
             
-            // Apply abnormal buff (x100 enchant luck every 1000 rolls)
-            if (hasAbnormalThisRoll) {
+            // Apply abnormal buff (x100 enchant luck for 75 rolls)
+            if (abnormalX100Active) {
                 total *= 100;
             }
             
@@ -2455,7 +2569,7 @@
                 if (enchant.type === 'greed') total += 2;
                 if (enchant.type === 'patience') total += 3;
                 if (enchant.type === 'obliteration') {
-                    total = 1; // Sets bulk to 1
+                    total = 1;
                 }
                 if (enchant.type === 'requiem') {
                     if (enchant.value === 1) total += 1;
@@ -2476,9 +2590,10 @@
             
             // Apply Eternium chance for double bulk
             if (eterniumLevel > 0) {
-                const eterniumChance = eterniumLevel * 0.05; // 5% per level
+                const eterniumChance = eterniumLevel * 0.05;
                 if (Math.random() < eterniumChance) {
                     total *= 2;
+                    showToast('Eternium!', 'Double bulk rolls!', 2000);
                 }
             }
             
@@ -2487,7 +2602,7 @@
                 total *= 5;
             }
             
-            return Math.min(total, 200); // Cap at 200
+            return Math.min(total, 200);
         }
 
         function getRank(rng) {
@@ -2526,6 +2641,9 @@
             const secretLuck = Math.max(1, secretLevel * 0.2 + getTotalEnchantSecret());
             const random = Math.random();
             
+            // Get disable secrets threshold
+            const disableSecretsBelow = disableSecretsEnabled ? parseFloat(document.getElementById('disableSecretsBelow').value) || 0 : 0;
+            
             let allNormalRanksDiscovered = true;
             for (const rank of RANKS) {
                 if (!discovered.ranks.has(rank.name)) {
@@ -2534,6 +2652,7 @@
                 }
             }
             
+            // Check for TRNG secrets first (these are always rollable regardless of disable setting)
             // Check for eradicate first (only with obliteration)
             const hasObliteration = equippedOrb && equippedOrb.enchants && 
                 equippedOrb.enchants.some(e => e.name === 'obliteration');
@@ -2541,14 +2660,24 @@
                 return 'eradicate';
             }
             
-            // Check for ahur yp first (fixed chance, unaffected by boosts)
+            // Check for ahur yp (fixed chance, unaffected by boosts)
             if (random <= 1/694200) {
                 return 'ahur yp';
             }
             
-            // Check for NULL first (true RNG secret, always replaces)
+            // Check for NULL (true RNG secret, always replaces)
             if (random <= 1/229172) {
                 return 'NULL';
+            }
+            
+            // Check for Completionist (always rollable once all normal ranks are discovered)
+            if (allNormalRanksDiscovered && random <= 1/1000000) {
+                return 'Completionist';
+            }
+            
+            // If disable secrets is enabled and baseRng is below threshold, skip normal secrets
+            if (disableSecretsEnabled && baseRng < disableSecretsBelow) {
+                return null;
             }
             
             // Check for poly²
@@ -2559,11 +2688,6 @@
             const currentRank = getRank(baseRng);
             if (currentRank === 'eclipse' && random <= 1/100000) {
                 return 'solar';
-            }
-            
-            // Completionist is always rollable once all normal ranks are discovered
-            if (allNormalRanksDiscovered && random <= 1/1000000) {
-                return 'Completionist';
             }
             
             for (let i = SECRETS.length - 1; i >= 0; i--) {
@@ -2679,7 +2803,7 @@
                     { name: 'platinumese', tier: 5, multiplier: 10000000 }
                 ];
                 
-                let selectedTier = goldiumTiers[0]; // Default to t1
+                let selectedTier = goldiumTiers[0];
                 for (let i = goldiumTiers.length - 1; i >= 0; i--) {
                     const tierChance = goldiumChance / goldiumTiers[i].multiplier;
                     if (Math.random() <= tierChance) {
@@ -2958,7 +3082,7 @@
                 }
             }
             
-            // Apply obfuscation animation for high RNG values - FIXED
+            // Apply obfuscation animation for high RNG values - FIXED (no double positive)
             const valueEl = slot.querySelector('.slot-value');
             if (shouldObfuscate(finalRng) && !displayText) {
                 valueEl.classList.add('obfuscating');
@@ -3121,6 +3245,7 @@
             updateInventory();
             updateEnchantInventory();
             updateMergeSelects();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3165,6 +3290,7 @@
         function deleteInventoryItem(index) {
             inventory.splice(index, 1);
             updateInventory();
+            updateRollStats();
             updateBottomStats();
             saveGame();
         }
@@ -3176,6 +3302,7 @@
             enchantOrbs.splice(index, 1);
             updateEnchantInventory();
             updateMergeSelects();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3189,6 +3316,7 @@
             }
             
             updateEnchantInventory();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3197,6 +3325,7 @@
         function unequipEnchantOrb() {
             equippedOrb = null;
             updateEnchantInventory();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3254,6 +3383,7 @@
             updateEnchantInventory();
             updateMergeSelects();
             updateIndex();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3280,15 +3410,35 @@
             hasAbnormalThisRoll = false;
             hasApocalypticThisRoll = false;
             hasGenesisT3Buffs = false;
+            
+            // Reset goldium for this roll
             goldiumActiveThisRoll = false;
-            currentGoldiumExponent = -1.3 - (polyExpLevel * 0.1);
+            currentGoldiumExponentBonus = 0;
+            goldiumTierActive = 0;
+            
+            // Decrement abnormal remaining rolls if active
+            if (abnormalX100Active) {
+                abnormalRemainingRolls--;
+                if (abnormalRemainingRolls <= 0) {
+                    abnormalX100Active = false;
+                }
+            }
             
             // Check for T3 buffs
             if (equippedOrb && equippedOrb.enchants) {
                 equippedOrb.enchants.forEach(enchant => {
-                    if (enchant.name === 'blitz') hasBlitzThisRoll = true;
-                    if (enchant.name === 'insanity') hasInsanityThisRoll = true;
-                    if (enchant.name === 'omnipotence') hasOmnipotenceThisRoll = true;
+                    if (enchant.name === 'blitz') {
+                        hasBlitzThisRoll = true;
+                        showToast('Blitz Active!', 'Roll speed cap bypassed for this roll.', 2000);
+                    }
+                    if (enchant.name === 'insanity') {
+                        hasInsanityThisRoll = true;
+                        showToast('Insanity Active!', '1% chance for x1000 RNG this roll.', 2000);
+                    }
+                    if (enchant.name === 'omnipotence') {
+                        hasOmnipotenceThisRoll = true;
+                        showToast('Omnipotence Active!', 'x1.5 Secret Luck for this roll.', 2000);
+                    }
                     if (enchant.name === 'unusuality') {
                         hasUnusualityThisRoll = true;
                         unusualityRolls++;
@@ -3296,9 +3446,11 @@
                     if (enchant.name === 'abnormal') {
                         hasAbnormalThisRoll = true;
                         abnormalRolls++;
-                        if (abnormalRolls >= 1000) {
-                            abnormalRolls = 0;
-                            // x100 enchant luck for this roll
+                        // 1/1000 chance to activate x100 enchant luck for 75 rolls
+                        if (Math.random() < 1/1000 && !abnormalX100Active) {
+                            abnormalX100Active = true;
+                            abnormalRemainingRolls = 75;
+                            showToast('Abnormal Trigger!', 'x100 Enchant Luck for 75 rolls!', 3000);
                         }
                     }
                     if (enchant.name === 'endless') {
@@ -3306,6 +3458,7 @@
                         if (Math.random() < 1/500) {
                             endlessActiveUntil = Date.now() + 10000;
                             hasEndlessActive = true;
+                            showToast('Endless Trigger!', 'Quintuple bulk rolls for 10 seconds!', 3000);
                         }
                     }
                     if (enchant.name === 'genesis') {
@@ -3316,40 +3469,27 @@
                         hasOmnipotenceThisRoll = true;
                         hasUnusualityThisRoll = true;
                         hasAbnormalThisRoll = true;
+                        showToast('Genesis Active!', 'All T3 buffs active!', 3000);
                     }
                     if (enchant.name === 'apocalyptic') {
                         hasApocalypticThisRoll = true;
+                        showToast('Apocalyptic Active!', '1% chance for x1000 RNG this roll.', 2000);
+                    }
+                    // Check for goldium enchants (trigger chance every roll)
+                    if (enchant.type === 'goldium') {
+                        if (Math.random() < enchant.triggerChance) {
+                            goldiumActiveThisRoll = true;
+                            currentGoldiumExponentBonus += enchant.exponent; // ADD to exponent, not set
+                            goldiumTierActive = enchant.tier;
+                            showToast('Goldium Active!', `T${enchant.tier}: +${enchant.exponent} to RNG exponent for this roll.`, 2000);
+                        }
                     }
                 });
             }
             
-            // Check for goldium enchants and trigger chance
-            goldiumRollCounter++;
-            if (goldiumRollCounter >= 5) {
-                goldiumRollCounter = 0;
-                
-                // Check each goldium enchant in equipped orb
-                if (equippedOrb && equippedOrb.enchants) {
-                    let highestTierExponent = -1.3 - (polyExpLevel * 0.1); // Base exponent
-                    
-                    equippedOrb.enchants.forEach(enchant => {
-                        if (enchant.type === 'goldium') {
-                            // Check if this goldium triggers
-                            if (Math.random() < enchant.triggerChance) {
-                                goldiumActiveThisRoll = true;
-                                // Use the most powerful exponent (most negative)
-                                if (enchant.exponent < highestTierExponent) {
-                                    highestTierExponent = enchant.exponent;
-                                }
-                            }
-                        }
-                    });
-                    
-                    if (goldiumActiveThisRoll) {
-                        currentGoldiumExponent = highestTierExponent;
-                        showToast('Goldium Active!', `RNG exponent set to ${currentGoldiumExponent} for this roll`, 2000);
-                    }
-                }
+            // Check for unusuality trigger
+            if (hasUnusualityThisRoll && unusualityRolls >= 5000) {
+                showToast('Unusuality Trigger!', 'Guaranteed 10k+ variant this roll!', 2000);
             }
             
             const slots = document.querySelectorAll('.slot');
@@ -3596,6 +3736,7 @@
                     }
                 }
                 
+                updateRollStats();
                 updateBottomStats();
                 updateUI();
                 updateIndex();
@@ -3670,12 +3811,13 @@
                 polycoin -= ultimatiplierCost;
                 ultimatiplierLevel++;
                 ultimatiplierCost = Math.floor(ultimatiplierCost * 1.2);
-            } else if (type === 'polyExp') { // NEW: Polyexponential numbers upgrade
+            } else if (type === 'polyExp') {
                 if (polyExpLevel >= 5 || polycoin < polyExpCost) return;
                 polycoin -= polyExpCost;
                 polyExpLevel++;
                 polyExpCost *= 1000;
             }
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3685,6 +3827,7 @@
             if (polycoinLuckBoosterPurchased || polycoin < polycoinLuckBoosterCost) return;
             polycoin -= polycoinLuckBoosterCost;
             polycoinLuckBoosterPurchased = true;
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3694,6 +3837,7 @@
             if (polygainMultiplierPurchased || polycoin < polygainMultiplierCost) return;
             polycoin -= polygainMultiplierCost;
             polygainMultiplierPurchased = true;
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3703,6 +3847,7 @@
             if (minSpeedUpgrades >= 4 || tickets < 5) return;
             tickets -= 5;
             minSpeedUpgrades++;
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3714,6 +3859,7 @@
             ticketProdLevel++;
             ticketProdCost *= 10;
             startTicketTimer();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3726,6 +3872,7 @@
             document.getElementById('spinnerSection').style.display = 'block';
             document.getElementById('spinBtn').disabled = tickets < 5;
             createSpinnerWheel();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -3838,6 +3985,7 @@
                 enchantOrbs.push(orb);
                 updateEnchantInventory();
                 updateMergeSelects();
+                updateRollStats();
                 updateBottomStats();
                 updateUI();
                 saveGame();
@@ -4008,11 +4156,11 @@
                 return `-1000 bulk (sets to 1), +${luck.toFixed(1)} luck, +${secret.toFixed(1)} secret, +${speed.toFixed(2)}s speed, +${variant.toFixed(1)} variant${starBonus}`;
             }
             if (enchant.type === 'apocalyptic') {
-                return `???${starBonus}`; // Hidden stats
+                return `???${starBonus}`;
             }
             if (enchant.type === 'goldium') {
                 const chance = (enchant.triggerChance * 100).toFixed(1);
-                return `${chance}% chance every 5 rolls to set RNG exponent to ${enchant.exponent}${starBonus}`;
+                return `${chance}% chance per roll to add ${enchant.exponent} to RNG exponent${starBonus}`;
             }
             return '';
         }
@@ -4274,6 +4422,7 @@
             
             updateEnchantInventory();
             updateMergeSelects();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             saveGame();
@@ -4365,7 +4514,7 @@
                 if (enchant.type === 'apocalyptic') effect = `???`;
                 if (enchant.type === 'goldium') {
                     const chance = (enchant.triggerChance * 100).toFixed(1);
-                    effect = `${chance}% chance every 5 rolls to set RNG exponent to ${enchant.exponent}`;
+                    effect = `${chance}% chance per roll to add ${enchant.exponent} to RNG exponent`;
                 }
                 const chanceDisplay = Math.round(1/enchant.chance);
                 return `<div class="index-item"><span style="${style}">${icon}</span> <span style="color: ${enchant.color}">${enchant.name}</span>: ${effect} (1/${formatNumber(chanceDisplay)})</div>`;
@@ -4386,10 +4535,47 @@
             
             // Update index and UI
             updateIndex();
+            updateRollStats();
             updateBottomStats();
             saveGame();
             
             showToast('Completionist Fixed', 'All normal ranks have been discovered. Completionist is now rollable!', 3000);
+        }
+
+        // NEW: Update roll stats display
+        function updateRollStats() {
+            const statsGrid = document.getElementById('rollStatsGrid');
+            if (!statsGrid) return;
+            
+            const luck = Math.max(1, luckLevel * 0.5 + getTotalEnchantLuck());
+            const secretLuck = Math.max(1, secretLevel * 0.2 + getTotalEnchantSecret());
+            const speedReduction = speedLevel * 0.1 + getTotalEnchantSpeed();
+            const baseSpeed = 3;
+            const minRollSpeed = Math.max(0.05 - (minSpeedUpgrades * 0.01), 0.01);
+            const rollSpeed = hasBlitzThisRoll ? Math.max(0.0168, baseSpeed - speedReduction) : Math.max(minRollSpeed, baseSpeed - speedReduction);
+            const variantLuck = Math.max(1, variantLuckLevel * 0.05 + getTotalEnchantVariant());
+            const enchantLuck = getTotalEnchantLuckBonus();
+            const bulkRolls = getTotalBulkRolls();
+            const baseExponent = -1.3 - (polyExpLevel * 0.1);
+            const currentExponent = baseExponent + currentGoldiumExponentBonus;
+            
+            const stats = [
+                { label: 'Luck', value: luck.toFixed(2) },
+                { label: 'Secret Luck', value: secretLuck.toFixed(2) },
+                { label: 'Roll Speed', value: rollSpeed.toFixed(2) + 's' },
+                { label: 'Variant Luck', value: variantLuck.toFixed(2) },
+                { label: 'Enchant Luck', value: enchantLuck.toFixed(2) },
+                { label: 'Bulk Rolls', value: bulkRolls },
+                { label: 'RNG Exponent', value: currentExponent.toFixed(2) },
+                { label: 'Goldium Active', value: goldiumActiveThisRoll ? `T${goldiumTierActive}` : 'No' }
+            ];
+            
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="roll-stat-item">
+                    <div class="roll-stat-label">${stat.label}</div>
+                    <div class="roll-stat-value">${stat.value}</div>
+                </div>
+            `).join('');
         }
 
         function updateBottomStats() {
@@ -4511,6 +4697,7 @@
             const ticketsPerMinute = 1 + ticketProdLevel;
             ticketInterval = setInterval(() => {
                 tickets += ticketsPerMinute;
+                updateRollStats();
                 updateBottomStats();
                 updateUI();
                 saveGame();
@@ -4549,10 +4736,12 @@
                     eterniumCost,
                     ultimatiplierLevel,
                     ultimatiplierCost,
-                    polyExpLevel, // NEW: Save polyexponential numbers level
-                    polyExpCost, // NEW: Save polyexponential numbers cost
+                    polyExpLevel,
+                    polyExpCost,
                     polycoinLuckBoosterPurchased,
                     polygainMultiplierPurchased,
+                    toastNotificationsEnabled,
+                    disableSecretsEnabled,
                     discovered: {
                         variants: Array.from(discovered.variants),
                         ranks: Array.from(discovered.ranks),
@@ -4743,15 +4932,15 @@
                         locked: equippedOrb.locked || false,
                         rollsWithOvertime: equippedOrb.rollsWithOvertime || 0
                     } : null,
-                    toastNotificationsEnabled,
                     gameStartTime: gameStartTime || Date.now(),
                     unusualityRolls,
                     abnormalRolls,
                     endlessActiveUntil,
                     hasEndlessActive,
-                    goldiumRollCounter
+                    abnormalX100Active,
+                    abnormalRemainingRolls
                 };
-                localStorage.setItem('polys-rng-save3', JSON.stringify(saveData));
+                localStorage.setItem('polys-rng-save4', JSON.stringify(saveData));
             } catch (error) {
                 console.error('failed to save game:', error);
             }
@@ -4759,7 +4948,7 @@
 
         function loadGame() {
             try {
-                const result = localStorage.getItem('polys-rng-save3');
+                const result = localStorage.getItem('polys-rng-save4');
                 if (result) {
                     const saveData = JSON.parse(result);
                     
@@ -4791,7 +4980,6 @@
                     ultimatiplierLevel = saveData.ultimatiplierLevel || 0;
                     ultimatiplierCost = saveData.ultimatiplierCost || 100;
                     
-                    // NEW: Load polyexponential numbers data
                     polyExpLevel = saveData.polyExpLevel || 0;
                     polyExpCost = saveData.polyExpCost || 1e11;
                     
@@ -4802,7 +4990,8 @@
                     abnormalRolls = saveData.abnormalRolls || 0;
                     endlessActiveUntil = saveData.endlessActiveUntil || 0;
                     hasEndlessActive = saveData.hasEndlessActive || false;
-                    goldiumRollCounter = saveData.goldiumRollCounter || 0;
+                    abnormalX100Active = saveData.abnormalX100Active || false;
+                    abnormalRemainingRolls = saveData.abnormalRemainingRolls || 0;
                     
                     cooldownThreshold = saveData.cooldownThreshold || 0;
                     cooldownTime = saveData.cooldownTime || 3;
@@ -4817,6 +5006,16 @@
                     } else {
                         toastBtn.textContent = '🔕 Toasts OFF';
                         toastBtn.classList.remove('active');
+                    }
+                    
+                    disableSecretsEnabled = saveData.disableSecretsEnabled || false;
+                    const disableSecretsBtn = document.getElementById('disableSecretsToggleBtn');
+                    if (disableSecretsEnabled) {
+                        disableSecretsBtn.textContent = '🔓 Secrets OFF';
+                        disableSecretsBtn.classList.add('active');
+                    } else {
+                        disableSecretsBtn.textContent = '🔒 Secrets ON';
+                        disableSecretsBtn.classList.remove('active');
                     }
                     
                     // FIXED: Set gameStartTime from save or current time
@@ -4861,6 +5060,7 @@
             updateEnchantInventory();
             updateMergeSelects();
             updateIndex();
+            updateRollStats();
             updateBottomStats();
             updateUI();
             
@@ -4874,6 +5074,7 @@
         updateSlots();
         updateUI();
         updateIndex();
+        updateRollStats();
         updateBottomStats();
         updateMergeSelects();
         initDragScrolling();
