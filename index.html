@@ -1287,6 +1287,22 @@
         .fix-completionist-btn:hover {
             background: #7b68ee;
         }
+        
+        /* Goldium enchant animation */
+        .slot.goldium-active {
+            animation: goldium-glow 0.5s infinite alternate;
+        }
+        
+        @keyframes goldium-glow {
+            0% { box-shadow: 0 0 5px gold; border-color: gold; }
+            100% { box-shadow: 0 0 15px gold; border-color: #ffd700; }
+        }
+        
+        .goldium-rank {
+            color: gold !important;
+            font-weight: bold;
+            text-shadow: 0 0 5px gold;
+        }
     </style>
 </head>
 <body>
@@ -1479,6 +1495,13 @@
                             <div class="upgrade-info">effect: massively increase polycoin gain</div>
                             <button onclick="buyPolygainMultiplier()" id="polygainBtn">buy (cost: <span id="polygainCost">1e50</span>)</button>
                         </div>
+                        <!-- NEW POLYEXPONENTIAL NUMBERS UPGRADE -->
+                        <div class="upgrade-box">
+                            <div class="upgrade-title">polyexponential numbers</div>
+                            <div class="upgrade-info">level: <span id="polyExpLevel">0</span>/5</div>
+                            <div class="upgrade-info">effect: -<span id="polyExpAmount">0.0</span> to RNG exponent</div>
+                            <button onclick="buyUpgrade('polyExp')" id="polyExpBtn">buy (cost: <span id="polyExpCost">1e11</span>)</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1602,7 +1625,12 @@
                 'delta': 'De',
                 'obliteration': 'Ob',
                 'avarice': 'Av',
-                'apocalyptic': 'Ap'
+                'apocalyptic': 'Ap',
+                'goldium t1': 'G1',
+                'goldium t2': 'G2',
+                'goldium t3': 'G3',
+                'goldium t4': 'G4',
+                'platinumese': 'Pt'
             };
             return abbreviations[enchantName.toLowerCase()] || 'E';
         }
@@ -1777,7 +1805,13 @@
             { name: 'delta', type: 'delta', value: 10, color: '#FF6347', chance: 1/89000, priority: 6 },
             { name: 'obliteration', type: 'obliteration', value: 1, color: '#000000', chance: 1/750000, priority: 7 },
             { name: 'avarice', type: 'avarice', bulk: 20, luck: -100, speed: -3, variant: -25, secret: -12.5, color: '#964B00', chance: 1/25000, priority: 8 },
-            { name: 'apocalyptic', type: 'apocalyptic', value: 0, color: '#FF0000', chance: 1/999999, priority: 9 } // NEW ENCHANT
+            { name: 'apocalyptic', type: 'apocalyptic', value: 0, color: '#FF0000', chance: 1/999999, priority: 9 },
+            // NEW GOLDIUM ENCHANTS
+            { name: 'goldium t1', type: 'goldium', tier: 1, chance: 1/5000000, color: '#FFD700', priority: 10, triggerChance: 0.03, exponent: -1.5 },
+            { name: 'goldium t2', type: 'goldium', tier: 2, chance: 1/125000000, color: '#FFC125', priority: 11, triggerChance: 0.06, exponent: -1.6 },
+            { name: 'goldium t3', type: 'goldium', tier: 3, chance: 1/3125000000, color: '#DAA520', priority: 12, triggerChance: 0.12, exponent: -1.7 },
+            { name: 'goldium t4', type: 'goldium', tier: 4, chance: 1/78125000000, color: '#B8860B', priority: 13, triggerChance: 0.15, exponent: -1.75 },
+            { name: 'platinumese', type: 'goldium', tier: 5, chance: 1/50000000000000, color: '#E5E4E2', priority: 14, triggerChance: 0.5, exponent: -2 }
         ];
 
         // SPINNER REWARDS
@@ -1848,6 +1882,8 @@
         let eterniumCost = 1e12;
         let ultimatiplierLevel = 0;
         let ultimatiplierCost = 100;
+        let polyExpLevel = 0; // NEW: Polyexponential numbers upgrade level
+        let polyExpCost = 1e11; // NEW: Starting cost for polyexponential numbers
         
         // NEW HIGH-TIER UPGRADES
         let polycoinLuckBoosterPurchased = false;
@@ -1868,6 +1904,11 @@
         let hasEndlessActive = false;
         let hasGenesisT3Buffs = false;
         let hasApocalypticThisRoll = false;
+        
+        // NEW: Goldium tracking
+        let goldiumRollCounter = 0;
+        let goldiumActiveThisRoll = false;
+        let currentGoldiumExponent = -1.3;
         
         // FIXED: Initialize gameStartTime here at the top
         let gameStartTime = Date.now();
@@ -2185,7 +2226,14 @@
 
         function calculateRNG() {
             const luck = Math.max(1, luckLevel * 0.5 + getTotalEnchantLuck());
-            let rng = Math.random() ** (-1.3 ) * luck
+            
+            // Base exponent from polyexponential numbers upgrade
+            const baseExponent = -1.3 - (polyExpLevel * 0.1);
+            
+            // Use current exponent (might be modified by goldium)
+            const currentExponent = goldiumActiveThisRoll ? currentGoldiumExponent : baseExponent;
+            
+            let rng = Math.random() ** currentExponent * luck;
             
             // Apply Ultimatiplier chance
             if (ultimatiplierLevel > 0) {
@@ -2532,7 +2580,7 @@
         }
 
         function shouldOverrideEnchant(enchantName) {
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice', 'apocalyptic', 'oblivion', 'fortune', 'overture', 'allknowing', 'unique', 'cloner', 'scientific', 'mighty', 'insanity'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'abnormal', 'unusuality', 'overtime', 'polys blessing', 'delta', 'obliteration', 'avarice', 'apocalyptic', 'oblivion', 'fortune', 'overture', 'allknowing', 'unique', 'cloner', 'scientific', 'mighty', 'insanity', 'goldium t1', 'goldium t2', 'goldium t3', 'goldium t4', 'platinumese'];
             return !overrideExceptions.includes(enchantName.toLowerCase());
         }
 
@@ -2619,8 +2667,42 @@
                 };
             }
             
+            // Check for goldium enchants
+            const goldiumChance = ENCHANT_TYPES.find(e => e.name === 'goldium t1').chance * (1 + enchantLuck);
+            if (Math.random() <= goldiumChance) {
+                // Determine which goldium tier to generate
+                const goldiumTiers = [
+                    { name: 'goldium t1', tier: 1, multiplier: 1 },
+                    { name: 'goldium t2', tier: 2, multiplier: 25 },
+                    { name: 'goldium t3', tier: 3, multiplier: 625 },
+                    { name: 'goldium t4', tier: 4, multiplier: 15625 },
+                    { name: 'platinumese', tier: 5, multiplier: 10000000 }
+                ];
+                
+                let selectedTier = goldiumTiers[0]; // Default to t1
+                for (let i = goldiumTiers.length - 1; i >= 0; i--) {
+                    const tierChance = goldiumChance / goldiumTiers[i].multiplier;
+                    if (Math.random() <= tierChance) {
+                        selectedTier = goldiumTiers[i];
+                        break;
+                    }
+                }
+                
+                const goldiumEnchant = ENCHANT_TYPES.find(e => e.name === selectedTier.name);
+                generated[selectedTier.name] = {
+                    name: goldiumEnchant.name,
+                    type: goldiumEnchant.type,
+                    tier: goldiumEnchant.tier,
+                    triggerChance: goldiumEnchant.triggerChance,
+                    exponent: goldiumEnchant.exponent,
+                    color: goldiumEnchant.color,
+                    priority: goldiumEnchant.priority
+                };
+            }
+            
             ENCHANT_TYPES.forEach(enchant => {
-                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration' || enchant.name === 'avarice' || enchant.name === 'apocalyptic') return;
+                if (enchant.name === 'alpha' || enchant.name === 'delta' || enchant.name === 'obliteration' || 
+                    enchant.name === 'avarice' || enchant.name === 'apocalyptic' || enchant.type === 'goldium') return;
                 
                 if ((hasAlpha || hasDelta || hasObliterationEnchant || hasAvarice || hasApocalyptic) && shouldOverrideEnchant(enchant.name)) {
                     return;
@@ -2636,10 +2718,10 @@
                             baseSpeed: enchant.baseSpeed,
                             baseVariant: enchant.baseVariant,
                             baseSecret: enchant.baseSecret,
-                            currentLuck: enchant.baseLuck,
-                            currentSpeed: enchant.baseSpeed,
-                            currentVariant: enchant.baseVariant,
-                            currentSecret: enchant.baseSecret,
+                            currentLuck: enchant.currentLuck,
+                            currentSpeed: enchant.currentSpeed,
+                            currentVariant: enchant.currentVariant,
+                            currentSecret: enchant.currentSecret,
                             color: enchant.color,
                             priority: enchant.priority
                         };
@@ -2793,7 +2875,7 @@
             
             // Clear previous classes
             slot.className = 'slot rolled acceptable';
-            slot.classList.remove('null-secret', 'completionist-animating', 'obfuscating', 'apocalyptic-shake');
+            slot.classList.remove('null-secret', 'completionist-animating', 'obfuscating', 'apocalyptic-shake', 'goldium-active');
             
             // Remove all rank font classes
             const fontClasses = ['font-fantasy', 'font-giant', 'font-ultimate', 'font-apex', 
@@ -2816,6 +2898,11 @@
             const hasApocalyptic = generatedEnchants && generatedEnchants.some(e => e.name === 'apocalyptic');
             if (hasApocalyptic) {
                 slot.classList.add('apocalyptic-shake');
+            }
+            
+            // Apply goldium glow if active this roll
+            if (goldiumActiveThisRoll) {
+                slot.classList.add('goldium-active');
             }
             
             const color = getRNGColor(finalRng, rank);
@@ -2977,6 +3064,16 @@
                                 color: enchant.color,
                                 priority: enchant.priority
                             };
+                        } else if (enchant.type === 'goldium') {
+                            return {
+                                name: enchant.name,
+                                type: enchant.type,
+                                tier: enchant.tier,
+                                triggerChance: enchant.triggerChance,
+                                exponent: enchant.exponent,
+                                color: enchant.color,
+                                priority: enchant.priority
+                            };
                         }
                         return { ...enchant };
                     }),
@@ -3000,7 +3097,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake', 'goldium-active');
             }
             
             // Disable the buttons for this slot
@@ -3043,7 +3140,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('acceptable');
-                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake', 'goldium-active');
             }
             
             // Disable the buttons for this slot
@@ -3183,6 +3280,8 @@
             hasAbnormalThisRoll = false;
             hasApocalypticThisRoll = false;
             hasGenesisT3Buffs = false;
+            goldiumActiveThisRoll = false;
+            currentGoldiumExponent = -1.3 - (polyExpLevel * 0.1);
             
             // Check for T3 buffs
             if (equippedOrb && equippedOrb.enchants) {
@@ -3224,6 +3323,35 @@
                 });
             }
             
+            // Check for goldium enchants and trigger chance
+            goldiumRollCounter++;
+            if (goldiumRollCounter >= 5) {
+                goldiumRollCounter = 0;
+                
+                // Check each goldium enchant in equipped orb
+                if (equippedOrb && equippedOrb.enchants) {
+                    let highestTierExponent = -1.3 - (polyExpLevel * 0.1); // Base exponent
+                    
+                    equippedOrb.enchants.forEach(enchant => {
+                        if (enchant.type === 'goldium') {
+                            // Check if this goldium triggers
+                            if (Math.random() < enchant.triggerChance) {
+                                goldiumActiveThisRoll = true;
+                                // Use the most powerful exponent (most negative)
+                                if (enchant.exponent < highestTierExponent) {
+                                    highestTierExponent = enchant.exponent;
+                                }
+                            }
+                        }
+                    });
+                    
+                    if (goldiumActiveThisRoll) {
+                        currentGoldiumExponent = highestTierExponent;
+                        showToast('Goldium Active!', `RNG exponent set to ${currentGoldiumExponent} for this roll`, 2000);
+                    }
+                }
+            }
+            
             const slots = document.querySelectorAll('.slot');
             slots.forEach((slot, i) => {
                 slot.innerHTML = `
@@ -3236,7 +3364,7 @@
                 slot.classList.remove('selected');
                 slot.classList.remove('rolled');
                 slot.classList.remove('null-secret');
-                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake');
+                slot.classList.remove('completionist-animating', 'obfuscating', 'apocalyptic-shake', 'goldium-active');
                 const starIndicator = slot.querySelector('.slot-stars');
                 if (starIndicator) starIndicator.remove();
                 const enchantIndicator = slot.querySelector('.slot-enchant');
@@ -3542,6 +3670,11 @@
                 polycoin -= ultimatiplierCost;
                 ultimatiplierLevel++;
                 ultimatiplierCost = Math.floor(ultimatiplierCost * 1.2);
+            } else if (type === 'polyExp') { // NEW: Polyexponential numbers upgrade
+                if (polyExpLevel >= 5 || polycoin < polyExpCost) return;
+                polycoin -= polyExpCost;
+                polyExpLevel++;
+                polyExpCost *= 1000;
             }
             updateBottomStats();
             updateUI();
@@ -3877,6 +4010,10 @@
             if (enchant.type === 'apocalyptic') {
                 return `???${starBonus}`; // Hidden stats
             }
+            if (enchant.type === 'goldium') {
+                const chance = (enchant.triggerChance * 100).toFixed(1);
+                return `${chance}% chance every 5 rolls to set RNG exponent to ${enchant.exponent}${starBonus}`;
+            }
             return '';
         }
 
@@ -4034,7 +4171,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion', 'goldium t1', 'goldium t2', 'goldium t3', 'goldium t4', 'platinumese'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -4086,7 +4223,7 @@
             const otherEnchants = combinedEnchants.filter(e => e.name !== 'alpha' && e.name !== 'delta');
             
             const finalEnchants = [];
-            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion'];
+            const overrideExceptions = ['requiem i', 'requiem ii', 'genesis', 'blitz', 'omnipotence', 'endless', 'unusual', 'unusuality', 'overtime', 'polys blessing', 'obliteration', 'avarice', 'apocalyptic', 'greed', 'patience', 'oblivion', 'goldium t1', 'goldium t2', 'goldium t3', 'goldium t4', 'platinumese'];
             
             if (alphaEnchants.length > 0 || deltaEnchants.length > 0) {
                 finalEnchants.push(...alphaEnchants, ...deltaEnchants);
@@ -4225,7 +4362,11 @@
                 }
                 if (enchant.type === 'greed') effect = '+2 bulk roll, -20 luck, -0.7s speed';
                 if (enchant.type === 'patience') effect = '+3 bulk roll, +100 luck, -25s speed, +5 variant';
-                if (enchant.type === 'apocalyptic') effect = `???`; // Hidden stats
+                if (enchant.type === 'apocalyptic') effect = `???`;
+                if (enchant.type === 'goldium') {
+                    const chance = (enchant.triggerChance * 100).toFixed(1);
+                    effect = `${chance}% chance every 5 rolls to set RNG exponent to ${enchant.exponent}`;
+                }
                 const chanceDisplay = Math.round(1/enchant.chance);
                 return `<div class="index-item"><span style="${style}">${icon}</span> <span style="color: ${enchant.color}">${enchant.name}</span>: ${effect} (1/${formatNumber(chanceDisplay)})</div>`;
             }).join('');
@@ -4270,7 +4411,7 @@
                 { title: 'Enchants Discovered', value: `${discovered.enchants.size}/${ENCHANT_TYPES.length}` },
                 { title: 'Highest Inventory Tier', value: inventory.length > 0 ? getInventoryTier(Math.max(...inventory.map(i => i.finalRng))).name : 'None' },
                 { title: 'Equipped Enchant Power', value: equippedOrb ? formatNumber(equippedOrb.enchants.reduce((sum, e) => sum + (e.value || e.bulk || 0), 0)) : '0' },
-                { title: 'Active Upgrades', value: formatNumber(bulkLevel + luckLevel + secretLevel + speedLevel + invLevel + enchantLuckLevel + variantLuckLevel + eterniumLevel + ultimatiplierLevel) }
+                { title: 'Active Upgrades', value: formatNumber(bulkLevel + luckLevel + secretLevel + speedLevel + invLevel + enchantLuckLevel + variantLuckLevel + eterniumLevel + ultimatiplierLevel + polyExpLevel) }
             ];
             
             statsGrid.innerHTML = stats.map(stat => `
@@ -4334,6 +4475,12 @@
             document.getElementById('ultimatiplierAmount').textContent = (ultimatiplierLevel * 0.05).toFixed(2);
             document.getElementById('ultimatiplierCost').textContent = formatNumber(ultimatiplierCost);
             document.getElementById('ultimatiplierBtn').disabled = ultimatiplierLevel >= 100 || polycoin < ultimatiplierCost;
+            
+            // NEW POLYEXPONENTIAL NUMBERS UPGRADE UI
+            document.getElementById('polyExpLevel').textContent = formatNumber(polyExpLevel);
+            document.getElementById('polyExpAmount').textContent = (polyExpLevel * 0.1).toFixed(1);
+            document.getElementById('polyExpCost').textContent = formatNumber(polyExpCost);
+            document.getElementById('polyExpBtn').disabled = polyExpLevel >= 5 || polycoin < polyExpCost;
             
             // HIGH-TIER UPGRADES UI
             document.getElementById('polycoinLuckStatus').textContent = polycoinLuckBoosterPurchased ? 'purchased' : 'not purchased';
@@ -4402,6 +4549,8 @@
                     eterniumCost,
                     ultimatiplierLevel,
                     ultimatiplierCost,
+                    polyExpLevel, // NEW: Save polyexponential numbers level
+                    polyExpCost, // NEW: Save polyexponential numbers cost
                     polycoinLuckBoosterPurchased,
                     polygainMultiplierPurchased,
                     discovered: {
@@ -4445,6 +4594,16 @@
                                     name: e.name,
                                     type: e.type,
                                     value: e.value,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'goldium') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    tier: e.tier,
+                                    triggerChance: e.triggerChance,
+                                    exponent: e.exponent,
                                     color: e.color,
                                     priority: e.priority
                                 };
@@ -4493,6 +4652,16 @@
                                     name: e.name,
                                     type: e.type,
                                     value: e.value,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
+                            } else if (e.type === 'goldium') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    tier: e.tier,
+                                    triggerChance: e.triggerChance,
+                                    exponent: e.exponent,
                                     color: e.color,
                                     priority: e.priority
                                 };
@@ -4549,6 +4718,16 @@
                                     color: e.color,
                                     priority: e.priority
                                 };
+                            } else if (e.type === 'goldium') {
+                                return {
+                                    name: e.name,
+                                    type: e.type,
+                                    tier: e.tier,
+                                    triggerChance: e.triggerChance,
+                                    exponent: e.exponent,
+                                    color: e.color,
+                                    priority: e.priority
+                                };
                             }
                             return {
                                 name: e.name,
@@ -4569,7 +4748,8 @@
                     unusualityRolls,
                     abnormalRolls,
                     endlessActiveUntil,
-                    hasEndlessActive
+                    hasEndlessActive,
+                    goldiumRollCounter
                 };
                 localStorage.setItem('polys-rng-save3', JSON.stringify(saveData));
             } catch (error) {
@@ -4611,6 +4791,10 @@
                     ultimatiplierLevel = saveData.ultimatiplierLevel || 0;
                     ultimatiplierCost = saveData.ultimatiplierCost || 100;
                     
+                    // NEW: Load polyexponential numbers data
+                    polyExpLevel = saveData.polyExpLevel || 0;
+                    polyExpCost = saveData.polyExpCost || 1e11;
+                    
                     polycoinLuckBoosterPurchased = saveData.polycoinLuckBoosterPurchased || false;
                     polygainMultiplierPurchased = saveData.polygainMultiplierPurchased || false;
                     
@@ -4618,6 +4802,7 @@
                     abnormalRolls = saveData.abnormalRolls || 0;
                     endlessActiveUntil = saveData.endlessActiveUntil || 0;
                     hasEndlessActive = saveData.hasEndlessActive || false;
+                    goldiumRollCounter = saveData.goldiumRollCounter || 0;
                     
                     cooldownThreshold = saveData.cooldownThreshold || 0;
                     cooldownTime = saveData.cooldownTime || 3;
